@@ -30,10 +30,10 @@ const theme = createMuiTheme({
 	},
 });
 
-if (!location.hostname.includes("local"))
-{
-	ReactGA.initialize('UA-23730353-5');
-}
+ReactGA.initialize('UA-23730353-5', {
+	debug: location.hostname.includes("local")
+});
+ReactGA.pageview(window.location.pathname + window.location.search);
 
 ReactDOM.render(
 	<BrowserRouter>

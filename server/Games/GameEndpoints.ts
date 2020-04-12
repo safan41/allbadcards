@@ -19,7 +19,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -30,11 +30,34 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		{
 			const card = CardManager.getWhiteCard(parseInt(req.query.cardId));
 
-			res.send(card);
+			res.send({card});
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
+		}
+	});
+
+	app.get("/api/game/get-packnames", cache("10 minutes"), async (req, res, next) =>
+	{
+		try
+		{
+			const packIds = Object.keys(CardManager.packs);
+			const packs = packIds.map(packId =>
+			{
+				const packDef = CardManager.packs[packId];
+				return {
+					packId,
+					packName: packDef.name,
+					blackCount: packDef.black.length,
+					whiteCount: packDef.white.length
+				}
+			});
+			res.send(packs);
+		}
+		catch (error)
+		{
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -49,7 +72,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -63,7 +86,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -78,7 +101,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -93,7 +116,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -102,13 +125,13 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		console.log(req.url, req.body);
 		try
 		{
-			const result = await GameManager.startGame(req.body.gameId, req.body.ownerGuid);
+			const result = await GameManager.startGame(req.body.gameId, req.body.ownerGuid, req.body.includedPacks, req.body.includedCardcastPacks);
 
 			res.send(result);
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -123,7 +146,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -138,7 +161,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -153,7 +176,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -168,7 +191,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -183,7 +206,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
@@ -198,7 +221,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			res.send(500, { message: error.message, stack: error.stack });
+			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 

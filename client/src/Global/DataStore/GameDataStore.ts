@@ -1,5 +1,5 @@
 import {DataStore} from "./DataStore";
-import {GameItem, IBlackCard, IWhiteCard, Platform} from "../Platform/platform";
+import {GameItem, IBlackCard, IPackDef, IWhiteCard, Platform} from "../Platform/platform";
 import {UserDataStore} from "./UserDataStore";
 import deepEqual from "deep-equal";
 import {ArrayFlatten} from "../Utils/ArrayUtils";
@@ -9,6 +9,9 @@ export type WhiteCardMap = { [cardId: number]: IWhiteCard | undefined };
 export interface IGameDataStorePayload
 {
 	game: GameItem | null;
+	packs: IPackDef[];
+	includedPacks: string[];
+	includedCardcastPacks: string[];
 	roundCardDefs: WhiteCardMap;
 	playerCardDefs: WhiteCardMap;
 	blackCardDef: IBlackCard | null;
@@ -18,8 +21,11 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 {
 	public static Instance = new _GameDataStore({
 		game: null,
+		packs: [],
 		roundCardDefs: {},
 		playerCardDefs: {},
+		includedPacks: [],
+		includedCardcastPacks: [],
 		blackCardDef: null
 	});
 
@@ -45,7 +51,13 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		this.ws.onclose = () => {
 			alert("You've lost your connection to the server - please try refreshing! If this continues happening, the server is probably under load. Sorry about that!");
-		}
+		};
+
+		Platform.getPacks()
+			.then(data => this.update({
+				packs: data,
+				includedPacks: data.slice(0, 19).map(p => p.packId)
+			}));
 	}
 
 	protected update(data: Partial<IGameDataStorePayload>)
@@ -117,9 +129,9 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	private async loadWhiteCardMap(cardIds: number[]): Promise<WhiteCardMap>
 	{
 		const data = await Platform.getWhiteCards(cardIds);
-		const map = data.reduce((acc, item) =>
+		const map = cardIds.reduce((acc, cardId, i) =>
 		{
-			acc[item.id] = item;
+			acc[cardId] = data[i];
 			return acc;
 		}, {} as WhiteCardMap);
 
@@ -184,6 +196,20 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		return Platform.startRound(this.state.game.id, userGuid)
 			.catch(e => console.error(e));
+	}
+
+	public setIncludedPacks(includedPacks: string[])
+	{
+		this.update({
+			includedPacks
+		});
+	}
+
+	public setIncludedCardcastPacks(includedCardcastPacks: string[])
+	{
+		this.update({
+			includedCardcastPacks
+		});
 	}
 
 	public forfeit(playerGuid: string, cardsNeeded: number)

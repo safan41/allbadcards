@@ -134,27 +134,10 @@ export class GamePlayWhite extends React.Component<Props, State>
 				localStorage.setItem(this.getCardsSuckLsKey(gameId), String(this.state.gameData.game?.roundIndex ?? 0));
 			}
 
-			GameDataStore.forfeit(this.state.userData.playerGuid, this.getTargetPickNeeded());
+			let targetPicked = this.state.gameData.blackCardDef?.pick ?? 1;
+			GameDataStore.forfeit(this.state.userData.playerGuid, targetPicked);
 		}
 	};
-
-	private getTargetPickNeeded()
-	{
-		const special = this.state.gameData.blackCardDef?.special;
-		let targetPicked = 1;
-		switch (special?.toUpperCase())
-		{
-			case "DRAW 2, PICK 3":
-				targetPicked = 3;
-				break;
-
-			case "PICK 2":
-				targetPicked = 2;
-				break;
-		}
-
-		return targetPicked;
-	}
 
 	public render()
 	{
@@ -192,7 +175,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 
 		const hasWinner = !!gameData.game?.lastWinner;
 
-		let targetPicked = this.getTargetPickNeeded();
+		let targetPicked = gameData.blackCardDef?.pick ?? 1;
 
 		const metPickTarget = targetPicked <= this.state.pickedCards.length;
 		const revealTime = !playersAreRemaining && gameData.game.revealIndex >= 0 && gameData.game.revealIndex <= Object.keys(roundCards).length;
@@ -216,7 +199,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 					{roundStarted &&
                     <Grid item xs={12} sm={6}>
                         <BlackCard>
-							{gameData.blackCardDef?.prompt}
+							{gameData.blackCardDef?.text}
                         </BlackCard>
                     </Grid>
 					}

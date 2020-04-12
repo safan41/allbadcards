@@ -87,7 +87,7 @@ export class RevealWhites extends React.Component <Props, State>
 						<WhiteCard key={revealedIndex} style={{marginBottom: "0.5rem"}}>
 							{cardsRevealed.map(card => card && (
 								<>
-									<div>{card.response}</div>
+									<div>{card}</div>
 									<Divider style={{margin: "1rem 0"}}/>
 								</>
 							))}

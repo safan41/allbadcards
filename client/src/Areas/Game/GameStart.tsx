@@ -5,20 +5,16 @@ import GamePreview from "./GamePreview";
 import {Platform} from "../../Global/Platform/platform";
 import {UserDataStore} from "../../Global/DataStore/UserDataStore";
 import {GameDataStore} from "../../Global/DataStore/GameDataStore";
+import {Container} from "@material-ui/core";
+import Typography from "@material-ui/core/Typography";
+import {GameSettings} from "./Components/GameSettings";
+import {CopyGameLink} from "../../UI/CopyGameLink";
+import Divider from "@material-ui/core/Divider";
 
 interface IGameStartProps
 {
 	id: string;
 }
-
-const useStyles = makeStyles({
-	playersLabel: {
-		marginTop: "2rem"
-	},
-	gameId: {
-		padding: "1rem 0"
-	}
-});
 
 const GameStart: React.FC<IGameStartProps> = (props) =>
 {
@@ -29,8 +25,9 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 		GameDataStore.listen(setGameData);
 	}, []);
 
-	const onClickStart = () => {
-		Platform.startGame(UserDataStore.state.playerGuid, props.id)
+	const onClickStart = () =>
+	{
+		Platform.startGame(UserDataStore.state.playerGuid, props.id, gameData.includedPacks, gameData.includedCardcastPacks)
 			.catch(e => console.error(e));
 	};
 
@@ -42,6 +39,8 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 			<Button variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
 				Start
 			</Button>
+			<Divider style={{margin: "2rem 0"}} />
+			<GameSettings/>
 		</GamePreview>
 	);
 };

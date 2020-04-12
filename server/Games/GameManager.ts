@@ -44,6 +44,8 @@ export interface GameItem
 		whiteCardIds: number[];
 	} | undefined;
 	randomOffset: number;
+	includedPacks: string[];
+	includedCardcastPacks: string[];
 }
 
 interface ICard
@@ -210,12 +212,12 @@ class _GameManager
 				usedWhiteCards: [],
 				revealIndex: -1,
 				lastWinner: undefined,
-				randomOffset: 0
+				randomOffset: 0,
+				includedPacks: [],
+				includedCardcastPacks: []
 			};
 
-			const gameItem = CardManager.nextBlackCard(initialGameItem);
-
-			await this.games.insertOne(gameItem);
+			await this.games.insertOne(initialGameItem);
 
 			const game = await this.getGame(gameId);
 
@@ -344,7 +346,7 @@ class _GameManager
 		return newGame;
 	}
 
-	public async startGame(gameId: string, ownerGuid: string)
+	public async startGame(gameId: string, ownerGuid: string, includedPacks: string[], includedCardcastPacks: string[])
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -353,12 +355,15 @@ class _GameManager
 			throw new Error("User cannot start game");
 		}
 
-		const newHands = await CardManager.dealWhiteCards(existingGame);
-		const newGame = {...existingGame};
+		let newGame = {...existingGame};
 
 		const playerGuids = Object.keys(existingGame.players);
 		newGame.chooserGuid = playerGuids[0];
 		newGame.started = true;
+		newGame.includedPacks = includedPacks;
+		newGame.includedCardcastPacks = includedCardcastPacks;
+		const newHands = await CardManager.dealWhiteCards(newGame);
+		newGame = CardManager.nextBlackCard(newGame);
 
 		Object.keys(newGame.players).forEach(playerGuid =>
 		{
