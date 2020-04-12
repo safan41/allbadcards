@@ -88,7 +88,7 @@ export class ShowWinner extends React.Component<Props, State>
 					<WhiteCard style={{marginBottom: "0.5rem"}}>
 						{winnerCards.map(card => card && (
 							<>
-								<div>{card.response}</div>
+								<div>{card}</div>
 								<Divider/>
 							</>
 						))}

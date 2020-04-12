@@ -35,6 +35,8 @@ export abstract class DataStore<TState extends {},
 		this._observers.push(observer);
 
 		observer.callback(this._currentState);
+
+		return () => { this._observers.splice(this._observers.indexOf(observer), 1) };
 	}
 
 	public get state()

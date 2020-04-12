@@ -1,6 +1,15 @@
 import {ErrorDataStore} from "../DataStore/ErrorDataStore";
+import ReactGA from "react-ga";
 
 type PlayerMap = { [key: string]: GamePlayer };
+
+export interface IPackDef
+{
+	packId: string;
+	packName: string;
+	blackCount: number;
+	whiteCount: number;
+}
 
 export interface GamePlayer
 {
@@ -35,28 +44,29 @@ export interface GameItem
 	randomOffset: number;
 }
 
-export interface ICard
+export interface IBlackCard
 {
-	id: number;
+	text: string;
+	pick: number;
 }
 
-export interface IBlackCard extends ICard
-{
-	prompt: string;
-	special: string;
-}
-
-export interface IWhiteCard extends ICard
-{
-	response: string;
-}
-
+export type IWhiteCard = string;
 
 class _Platform
 {
 	public static Instance = new _Platform();
 
 	private loadedWhiteCards: { [cardId: string]: IWhiteCard } = {};
+
+	private static trackEvent(action: string, label?: string, value?: number)
+	{
+		ReactGA.event({
+			action,
+			category: "Game",
+			label,
+			value
+		});
+	}
 
 	private static async doGet<TData>(url: string)
 	{
@@ -103,6 +113,8 @@ class _Platform
 
 	public async createGame(ownerGuid: string, nickname: string)
 	{
+		_Platform.trackEvent("create");
+
 		return _Platform.doPost<GameItem>("/api/game/create", {
 			ownerGuid,
 			nickname
@@ -111,6 +123,8 @@ class _Platform
 
 	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating = false)
 	{
+		_Platform.trackEvent("join", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/join", {
 			playerGuid,
 			gameId,
@@ -121,6 +135,8 @@ class _Platform
 
 	public async removePlayer(gameId: string, targetGuid: string, playerGuid: string)
 	{
+		_Platform.trackEvent("remove-player", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/kick", {
 			gameId,
 			targetGuid,
@@ -128,16 +144,22 @@ class _Platform
 		});
 	}
 
-	public async startGame(ownerGuid: string, gameId: string)
+	public async startGame(ownerGuid: string, gameId: string, includedPacks: string[], includedCardcastPacks: string[])
 	{
+		_Platform.trackEvent("start", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/start", {
 			gameId,
 			ownerGuid,
+			includedPacks,
+			includedCardcastPacks
 		});
 	}
 
 	public async playCards(gameId: string, playerGuid: string, cardIds: number[])
 	{
+		_Platform.trackEvent("play-cards", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/play-cards", {
 			gameId,
 			playerGuid,
@@ -147,6 +169,8 @@ class _Platform
 
 	public async forfeit(gameId: string, playerGuid: string, playedCards: number[])
 	{
+		_Platform.trackEvent("my-cards-suck", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/forfeit", {
 			gameId,
 			playerGuid,
@@ -156,6 +180,8 @@ class _Platform
 
 	public async selectWinnerCard(gameId: string, playerGuid: string, winningPlayerGuid: string)
 	{
+		_Platform.trackEvent("selected-winner", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/select-winner-card", {
 			gameId,
 			playerGuid,
@@ -173,6 +199,8 @@ class _Platform
 
 	public async startRound(gameId: string, ownerGuid: string)
 	{
+		_Platform.trackEvent("round-start", gameId);
+
 		return _Platform.doPost<GameItem>("/api/game/start-round", {
 			gameId,
 			ownerGuid,
@@ -197,8 +225,13 @@ class _Platform
 			}
 			else
 			{
-				_Platform.doGet<IWhiteCard>(`/api/game/get-white-card?cardId=${cardId}`)
-					.then(data => resolve(data))
+				_Platform.doGet<{ card: IWhiteCard }>(`/api/game/get-white-card?cardId=${cardId}`)
+					.then(data =>
+					{
+						const card = data.card;
+						this.loadedWhiteCards[cardId] = card;
+						resolve(card);
+					})
 					.catch(e => reject(e));
 			}
 		})
@@ -214,6 +247,11 @@ class _Platform
 		const promises = cardIds.map(cardId => this.getWhiteCard(cardId));
 
 		return Promise.all(promises);
+	}
+
+	public async getPacks()
+	{
+		return _Platform.doGet<IPackDef[]>("/api/game/get-packnames");
 	}
 }
 

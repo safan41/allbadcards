@@ -129,7 +129,7 @@ export class GamePlayBlack extends React.Component<Props, State>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
 					<Grid item xs={12} sm={6}>
 						<BlackCard>
-							{gameData.blackCardDef?.prompt}
+							{gameData.blackCardDef?.text}
 						</BlackCard>
 					</Grid>
 					<RevealWhites canReveal={true}/>
@@ -158,7 +158,7 @@ export class GamePlayBlack extends React.Component<Props, State>
 									)}>
 										{roundCardValues[i].map(card => card && (
 											<>
-												<div>{card.response}</div>
+												<div>{card}</div>
 												<Divider style={{margin: "1rem 0"}}/>
 											</>
 										))}
