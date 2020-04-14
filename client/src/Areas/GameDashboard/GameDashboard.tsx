@@ -11,6 +11,7 @@ import Paper from "@material-ui/core/Paper";
 import Typography from "@material-ui/core/Typography";
 import {SponsorList} from "./SponsorList";
 import {GameDataStore} from "../../Global/DataStore/GameDataStore";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
 
 interface IGameDashboardProps extends RouteComponentProps
 {
@@ -83,11 +84,18 @@ class GameDashboard extends React.Component<Props, State>
 	{
 		return (
 			<Container style={{textAlign: "center"}}>
+				<Typography>the best cards against humanity clone</Typography>
+
+				{GameDataStore.state.familyMode && (
+					<Typography variant={"h4"} style={{marginTop: "1rem"}}>Family-friendly edition!</Typography>
+				)}
 				<img style={{width: "50%", margin: "2rem auto", maxWidth: "13rem"}} src={"/logo-large.png"}/>
+
+				<Typography variant={"h4"}>Click "New Game" to start playing now!</Typography>
 
 				{!GameDataStore.state.familyMode && (
 					<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "1rem"}}>
-						<Button component={p => <a {...p} href={"https://not.allbad.cards"} />}>
+						<Button component={p => <a {...p} href={"https://not.allbad.cards"}/>}>
 							Family Edition &nbsp; <MdArrowForward/>
 						</Button>
 					</ButtonGroup>
