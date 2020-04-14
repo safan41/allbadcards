@@ -7,6 +7,7 @@ import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 import {GameRoster} from "./Components/GameRoster";
 import {CopyGameLink} from "../../UI/CopyGameLink";
 import Divider from "@material-ui/core/Divider";
+import {useDataStore} from "../../Global/Utils/HookUtils";
 
 interface IGamePreviewProps
 {
@@ -26,10 +27,12 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 {
 	const classes = useStyles();
 
-	useEffect(() =>
+	const gameData = useDataStore(GameDataStore);
+
+	if(props.id && !gameData.game && gameData.loaded)
 	{
-		GameDataStore.hydrate(props.id);
-	}, []);
+		return <Typography>No Game Found</Typography>;
+	}
 
 	return (
 		<div>

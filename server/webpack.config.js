@@ -7,6 +7,12 @@ const appDirectory = fs.realpathSync(process.cwd());
 const resolveApp = relativePath => path.resolve(appDirectory, relativePath);
 const entryPath = resolveApp("server/server.ts");
 
+const portEnvMap = {
+    local: 5000,
+    prod: 9000,
+    beta: 9500
+};
+
 module.exports = (serverEnv) => ({
     entry: entryPath,
     target: "node",
@@ -35,7 +41,7 @@ module.exports = (serverEnv) => ({
         new FriendlyErrorsWebpackPlugin(),
         new webpack.DefinePlugin({
             __SERVER_ENV__: `\"${serverEnv}\"`,
-            __PORT__: serverEnv === "prod" ? 9000 : 5000
+            __PORT__: portEnvMap[serverEnv]
         })
     ]
 });

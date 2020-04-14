@@ -11,7 +11,7 @@ import {ShowWinner} from "./Components/ShowWinner";
 import Button from "@material-ui/core/Button";
 import {PickWinner} from "./Components/PickWinner";
 
-interface IGamePlayBlackProps
+interface IGamePlaySpectateProps
 {
 }
 
@@ -19,16 +19,16 @@ interface DefaultProps
 {
 }
 
-type Props = IGamePlayBlackProps & DefaultProps;
-type State = IGamePlayBlackState;
+type Props = IGamePlaySpectateProps & DefaultProps;
+type State = IGamePlaySpectateState;
 
-interface IGamePlayBlackState
+interface IGamePlaySpectateState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
 }
 
-export class GamePlayBlack extends React.Component<Props, State>
+export class GamePlaySpectate extends React.Component<Props, State>
 {
 	constructor(props: Props)
 	{
@@ -61,18 +61,14 @@ export class GamePlayBlack extends React.Component<Props, State>
 		GameDataStore.startRound(this.state.userData.playerGuid);
 	};
 
-	private onClickSkipBlack = () =>
-	{
-		GameDataStore.skipBlack(this.state.userData.playerGuid);
-	};
-
 	public render()
 	{
 		const {
 			gameData,
+			userData
 		} = this.state;
 
-		const me = gameData.game?.players?.[this.state.userData.playerGuid];
+		const me = gameData.game?.spectators?.[this.state.userData.playerGuid];
 
 		const cardDefsLoaded = Object.values(gameData.game?.roundCards ?? {}).length === 0 || Object.keys(gameData.roundCardDefs).length > 0;
 
@@ -92,21 +88,17 @@ export class GamePlayBlack extends React.Component<Props, State>
 
 		const remainingPlayerGuids = Object.keys(players ?? {})
 			.filter(pg => !(pg in (roundCards ?? {})) && pg !== chooserGuid);
-
-		const playersAreRemaining = remainingPlayerGuids.length > 0;
+		const chooser = players?.[chooserGuid!]?.nickname;
 
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
 
 		const revealedIndex = this.state.gameData.game?.revealIndex ?? 0;
 		const timeToPick = remainingPlayers.length === 0;
 		const revealMode = timeToPick && revealedIndex < roundCardKeys.length;
-		const revealFinished = revealedIndex === roundCardKeys.length;
 
-		const waitingLabel = revealFinished && !playersAreRemaining
-			? "Pick the winner"
-			: timeToPick
-				? `Reveal each white card...`
-				: `Picking: ${remainingPlayers.join(", ")}`;
+		const waitingLabel = remainingPlayers.length === 0
+			? `Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`
+			: `Picking: ${remainingPlayers.join(", ")}`;
 
 		const hasWinner = !!gameData.game?.lastWinner;
 
@@ -114,7 +106,7 @@ export class GamePlayBlack extends React.Component<Props, State>
 			<>
 				<div>
 					<Typography>
-						Card Czar: <strong>You!</strong>
+						Card Czar: <strong>{chooser}</strong>
 					</Typography>
 					{!hasWinner && (
 						<div>
@@ -125,32 +117,23 @@ export class GamePlayBlack extends React.Component<Props, State>
 					)}
 				</div>
 				<Divider style={{margin: "1rem 0"}}/>
-				{!roundStarted && (
-					<Typography style={{marginBottom: "0.5rem", textAlign: "center"}}>Read the card aloud, then click Start The Round!</Typography>
-				)}
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
-					<Grid item xs={12} sm={6}>
-						<BlackCard>
+					{roundStarted &&
+                    <Grid item xs={12} sm={6}>
+                        <BlackCard>
 							{gameData.blackCardDef?.text}
-						</BlackCard>
-					</Grid>
-					<RevealWhites canReveal={true}/>
+                        </BlackCard>
+                    </Grid>
+					}
+					{!roundStarted && (
+						<Typography>Waiting for the round to start...</Typography>
+					)}
+					<RevealWhites canReveal={false}/>
 					<ShowWinner/>
 				</Grid>
-				{!roundStarted && (
-					<div style={{marginTop: "1rem", textAlign: "center"}}>
-						<Button color={"primary"} variant={"contained"} onClick={this.onClickSkipBlack}>
-							Skip Card
-						</Button>
-						<Button color={"primary"} variant={"contained"} onClick={this.onClickStartRound} style={{marginLeft: "1rem"}}>
-							Start the round!
-						</Button>
-					</div>
-				)}
 				<PickWinner
-					canPick={true}
+					canPick={false}
 					hasWinner={hasWinner}
-					onPickWinner={this.onSelect}
 					revealMode={revealMode}
 					timeToPick={timeToPick}
 				/>

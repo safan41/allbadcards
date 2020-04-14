@@ -5,6 +5,7 @@ import * as React from "react";
 import {IGameDataStorePayload} from "../../../Global/DataStore/GameDataStore";
 import {IUserData} from "../../../Global/DataStore/UserDataStore";
 import {useState} from "react";
+import sanitize from "sanitize-html";
 
 interface Props
 {
@@ -55,20 +56,21 @@ export const WhiteCardHand: React.FC<Props> =
 			return null;
 		}
 
-		const whiteCards = Object.values(gameData.playerCardDefs);
+		const playerCardIds = Object.keys(gameData.playerCardDefs).map(id => parseInt(id));
 
 		const hasPlayed = userData.playerGuid in roundCards;
 
-		const renderedWhiteCards = hasPlayed
-			? roundCards[userData.playerGuid].map(cid => gameData.roundCardDefs?.[cid]).filter(a => !!a)
-			: whiteCards;
+		const renderedCardIds = hasPlayed
+			? []
+			: playerCardIds;
+
+		const renderedDefs = hasPlayed ? gameData.roundCardDefs : gameData.playerCardDefs;
 
 		const metPickTarget = targetPicked <= pickedCards.length;
 
-		const renderedHand = renderedWhiteCards.map(card =>
+		const renderedHand = renderedCardIds.map((cardId, i) =>
 		{
-			const cardId = card?.id ?? -99;
-			const pickedIndex = pickedCards.indexOf(card?.id ?? -99);
+			const pickedIndex = pickedCards.indexOf(cardId);
 			const picked = pickedIndex > -1;
 			const label = picked
 				? targetPicked > 1
@@ -78,7 +80,7 @@ export const WhiteCardHand: React.FC<Props> =
 
 			return (
 				<Grid item xs={12} sm={6} md={4}>
-					{card && (
+					{cardId && (
 						<WhiteCard
 							key={cardId}
 							actions={!hasPlayed && (
@@ -102,7 +104,7 @@ export const WhiteCardHand: React.FC<Props> =
 								</>
 							)}
 						>
-							{card.response}
+							<div dangerouslySetInnerHTML={{__html: sanitize(renderedDefs[cardId] ?? "")}} />
 						</WhiteCard>
 					)}
 				</Grid>

@@ -16,11 +16,7 @@ import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import {GameRoster} from "../Areas/Game/Components/GameRoster";
-import {Link, matchPath, RouteComponentProps} from "react-router-dom";
-import {ErrorDataStore} from "../Global/DataStore/ErrorDataStore";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemText from "@material-ui/core/ListItemText";
+import {Link, matchPath} from "react-router-dom";
 import {CopyGameLink} from "../UI/CopyGameLink";
 import {GameDataStore} from "../Global/DataStore/GameDataStore";
 import {useHistory} from "react-router";
@@ -28,21 +24,7 @@ import {SiteRoutes} from "../Global/Routes/Routes";
 import ReactGA from "react-ga";
 import classNames from "classnames";
 import Helmet from "react-helmet";
-
-interface IAppProps
-{
-}
-
-interface DefaultProps
-{
-}
-
-type Props = IAppProps & DefaultProps;
-type State = IAppState;
-
-interface IAppState
-{
-}
+import useMediaQuery from "@material-ui/core/useMediaQuery";
 
 const useStyles = makeStyles({
 	logoIcon: {
@@ -67,7 +49,8 @@ const useStyles = makeStyles({
 		color: "#000",
 		textDecoration: "none",
 		display: "flex",
-		alignItems: "center"
+		alignItems: "center",
+		fontWeight: 700
 	},
 	appBar: {
 		padding: "0 1rem"
@@ -107,30 +90,50 @@ const App: React.FC = () =>
 		UserDataStore.initialize();
 		history.listen(() =>
 		{
+			UserDataStore.initialize();
 			ReactGA.pageview(window.location.pathname + window.location.search);
 		});
 	}, []);
 
+	const date = new Date();
+	const year = date.getFullYear();
+	const isFamilyMode = location.hostname.startsWith("not.");
+
+	const mobile = useMediaQuery('(max-width:600px)');
+
+	const titleDefault = isFamilyMode
+		? "(Not) All Bad Cards | Play the Family Edition of Cards Against Humanity online!"
+		: "All Bad Cards | Play Cards Against Humanity online!";
+
+	const template = isFamilyMode
+		? "(Not) All Bad Cards"
+		: "All Bad Cards";
+
+	const familyEdition = isFamilyMode ? " (Family Edition)" :"";
+
 	return (
 		<div>
-			<Helmet titleTemplate={"%s | All Bad Cards"} defaultTitle={"All Bad Cards | Play Cards Against Humanity online!"}/>
+			<Helmet titleTemplate={`%s | ${template}`} defaultTitle={titleDefault}>
+				<meta name="description" content={`Play Cards Against Humanity${familyEdition} online, for free! Over 10,000 cards in total. Play with friends over video chat, or in your house with your family. `}/>
+			</Helmet>
 			<OuterContainer>
 				<Paper elevation={10}>
 					<Container maxWidth={"md"} style={{position: "relative", padding: 0, background: "#FFF", minHeight: "100vh"}}>
 						<CardMedia>
 							<AppBar color={"transparent"} position="static" elevation={0}>
 								<Toolbar className={appBarClasses}>
-									<Typography variant="h6">
+									<Typography variant={mobile ? "body1" : "h5"}>
 										<Link to={"/"} className={classes.logo}>
-											<img className={classes.logoIcon} src={"/logo-small.png"}/> All Bad Cards
+											{!mobile || !isFamilyMode && <img className={classes.logoIcon} src={"/logo-small.png"}/>}
+											{isFamilyMode ? "(not) " : ""} all bad cards
 										</Link>
 									</Typography>
 									{isGame && (
 										<>
-											<Button className={classes.firstButton} size={"large"} onClick={() => setShareOpen(true)}>
+											<Button aria-label={"Share"} className={classes.firstButton} size={"large"} onClick={() => setShareOpen(true)}>
 												<MdShare/>
 											</Button>
-											<Button className={classes.rosterButton} size={"large"} onClick={() => setRosterOpen(true)}>
+											<Button aria-label={"Scoreboard"} className={classes.rosterButton} size={"large"} onClick={() => setRosterOpen(true)}>
 												<MdPeople/>
 											</Button>
 										</>
@@ -138,15 +141,18 @@ const App: React.FC = () =>
 								</Toolbar>
 							</AppBar>
 						</CardMedia>
-						<CardContent>
-							<Paper style={{padding: "1rem", marginBottom: "1rem"}}>
-								<Typography>
-									FYI everyone - the server is having trouble keeping up with demand. I've increased server capacity and I'm working to improve performance!
-								</Typography>
-							</Paper>
+						<CardContent style={{paddingTop: 0}}>
 							<Routes/>
 						</CardContent>
 					</Container>
+					<div style={{textAlign: "center", padding: "0.5rem 0"}}>
+						<Button style={{margin: "1rem 0 2rem"}} color={"primary"} variant={"contained"} component={p => <a {...p} href={"https://github.com/jakelauer/allbadcards/issues/new"} target={"_blank"} rel={"noreferrer nofollow"}/>}>
+							Report a Problem
+						</Button>
+						<Typography>
+							&copy; {year}. Created by <a href={"http://jakelauer.com"}>Jake Lauer</a> (<a href={"https://reddit.com/u/HelloControl_"}>HelloControl_</a>)
+						</Typography>
+					</div>
 				</Paper>
 			</OuterContainer>
 			<Dialog open={shareOpen} onClose={() => setShareOpen(false)}>
