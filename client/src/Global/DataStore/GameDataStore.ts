@@ -21,6 +21,9 @@ export interface IGameDataStorePayload
 	blackCardDef: IBlackCard | null;
 }
 
+let manualClose = false;
+let connectionOpen = false;
+
 class _GameDataStore extends DataStore<IGameDataStorePayload>
 {
 	public static Instance = new _GameDataStore({
@@ -41,9 +44,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public initialize()
 	{
-		if(this.ws)
+		if (this.ws)
 		{
 			this.ws.close();
+			manualClose = true;
 		}
 
 		const isLocal = !!location.hostname.match("local");
@@ -55,6 +59,8 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		this.ws.onopen = (e) =>
 		{
+			manualClose = false;
+			connectionOpen = true;
 			console.log(e);
 			this.ws?.send(JSON.stringify(UserDataStore.state));
 		};
@@ -67,9 +73,12 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		this.ws.onclose = () =>
 		{
-			alert("You've lost your connection to the server - please try refreshing! If this continues happening, the server is probably under load. Sorry about that!");
+			connectionOpen = false;
+			if (!manualClose)
+			{
+				this.retry();
+			}
 		};
-
 
 		Platform.getPacks()
 			.then(data =>
@@ -83,6 +92,29 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 					includedPacks: defaultPacks
 				})
 			});
+	}
+
+	private retry(count = 0)
+	{
+		console.log("Lost server connection. Retrying...", count);
+
+		this.initialize();
+
+		setTimeout(() =>
+		{
+			if (!connectionOpen)
+			{
+				if (count < 5)
+				{
+					this.retry(count + 1);
+				}
+				else
+				{
+					alert("You've lost your connection to the server - please try refreshing! If this continues happening, the server is probably under load. Sorry about that!");
+				}
+			}
+		}, 2000);
+
 	}
 
 	protected update(data: Partial<IGameDataStorePayload>)

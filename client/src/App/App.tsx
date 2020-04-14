@@ -101,9 +101,21 @@ const App: React.FC = () =>
 
 	const mobile = useMediaQuery('(max-width:600px)');
 
+	const titleDefault = isFamilyMode
+		? "(Not) All Bad Cards | Play the Family Edition of Cards Against Humanity online!"
+		: "All Bad Cards | Play Cards Against Humanity online!";
+
+	const template = isFamilyMode
+		? "(Not) All Bad Cards"
+		: "All Bad Cards";
+
+	const familyEdition = isFamilyMode ? " (Family Edition)" :"";
+
 	return (
 		<div>
-			<Helmet titleTemplate={"%s | All Bad Cards"} defaultTitle={"All Bad Cards | Play Cards Against Humanity online!"}/>
+			<Helmet titleTemplate={`%s | ${template}`} defaultTitle={titleDefault}>
+				<meta name="description" content={`Play Cards Against Humanity${familyEdition} online, for free! Over 10,000 cards in total. Play with friends over video chat, or in your house with your family. `}/>
+			</Helmet>
 			<OuterContainer>
 				<Paper elevation={10}>
 					<Container maxWidth={"md"} style={{position: "relative", padding: 0, background: "#FFF", minHeight: "100vh"}}>
@@ -129,7 +141,7 @@ const App: React.FC = () =>
 								</Toolbar>
 							</AppBar>
 						</CardMedia>
-						<CardContent>
+						<CardContent style={{paddingTop: 0}}>
 							<Routes/>
 						</CardContent>
 					</Container>

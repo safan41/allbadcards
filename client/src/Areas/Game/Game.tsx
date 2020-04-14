@@ -90,12 +90,15 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 				{winnerGuid && (
 					<div>
 						<Typography variant={"h3"}>Game over! {players?.[winnerGuid].nickname} is the winner.</Typography>
-						<div>
+						<div style={{
+							marginTop: "3rem",
+							textAlign: "center"
+						}}>
 							<Typography variant={"h5"}>Did you enjoy the game? Please consider supporting the site!</Typography>
 							<a href='https://ko-fi.com/A76217J' target='_blank'>
 								<img
 									height='36'
-									style={{border: 0, height: 36}}
+									style={{border: 0, height: 36, marginTop: "1rem"}}
 									src='https://cdn.ko-fi.com/cdn/kofi2.png?v=2'
 									alt='Buy Me a Coffee at ko-fi.com'
 								/>
