@@ -8,24 +8,32 @@ export type WhiteCardMap = { [cardId: number]: IWhiteCard | undefined };
 
 export interface IGameDataStorePayload
 {
+	loaded: boolean;
+	familyMode: boolean;
 	game: GameItem | null;
 	packs: IPackDef[];
 	includedPacks: string[];
 	includedCardcastPacks: string[];
 	roundCardDefs: WhiteCardMap;
 	playerCardDefs: WhiteCardMap;
+	roundsRequired: number;
+	password: string | null;
 	blackCardDef: IBlackCard | null;
 }
 
 class _GameDataStore extends DataStore<IGameDataStorePayload>
 {
 	public static Instance = new _GameDataStore({
+		loaded: false,
+		familyMode: location.hostname.startsWith("not."),
 		game: null,
 		packs: [],
 		roundCardDefs: {},
 		playerCardDefs: {},
 		includedPacks: [],
 		includedCardcastPacks: [],
+		roundsRequired: 8,
+		password: null,
 		blackCardDef: null
 	});
 
@@ -33,8 +41,16 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public initialize()
 	{
+		if(this.ws)
+		{
+			this.ws.close();
+		}
+
 		const isLocal = !!location.hostname.match("local");
-		const url = isLocal ? `ws://${location.hostname}:8080` : `wss://${location.hostname}`;
+		const url = isLocal
+			? `ws://${location.hostname}:8080`
+			: `wss://${location.hostname}`;
+
 		this.ws = new WebSocket(url);
 
 		this.ws.onopen = (e) =>
@@ -49,15 +65,24 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			this.update(data);
 		};
 
-		this.ws.onclose = () => {
+		this.ws.onclose = () =>
+		{
 			alert("You've lost your connection to the server - please try refreshing! If this continues happening, the server is probably under load. Sorry about that!");
 		};
 
+
 		Platform.getPacks()
-			.then(data => this.update({
-				packs: data,
-				includedPacks: data.slice(0, 19).map(p => p.packId)
-			}));
+			.then(data =>
+			{
+				const defaultPacks = this.state.familyMode
+					? [data[1].packId]
+					: data.slice(0, 20).map(p => p.packId);
+
+				this.update({
+					packs: data,
+					includedPacks: defaultPacks
+				})
+			});
 	}
 
 	protected update(data: Partial<IGameDataStorePayload>)
@@ -146,10 +171,17 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			.then(data =>
 			{
 				this.update({
+					loaded: true,
 					game: data
 				});
 			})
-			.catch(e => console.error(e));
+			.catch(e =>
+			{
+				this.update({
+					loaded: true,
+				});
+				console.error(e);
+			});
 	}
 
 	public playWhiteCards(cardIds: number[] | undefined, userGuid: string)
@@ -187,6 +219,17 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			.catch(e => console.error(e));
 	}
 
+	public skipBlack(userGuid: string)
+	{
+		if (!this.state.game)
+		{
+			throw new Error("Invalid card or game!");
+		}
+
+		return Platform.skipBlack(this.state.game.id, userGuid)
+			.catch(e => console.error(e));
+	}
+
 	public startRound(userGuid: string)
 	{
 		if (!this.state.game)
@@ -212,6 +255,13 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		});
 	}
 
+	public setRequiredRounds(rounds: number)
+	{
+		this.update({
+			roundsRequired: rounds
+		});
+	}
+
 	public forfeit(playerGuid: string, cardsNeeded: number)
 	{
 		const game = this.state.game;
@@ -222,18 +272,19 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		const toPlay: number[] = [];
 		const myCards = game.players[playerGuid].whiteCards;
-		while(toPlay.length < cardsNeeded)
+		while (toPlay.length < cardsNeeded)
 		{
 			let cardIndex = Math.floor(Math.random() * myCards.length);
 			const card = myCards[cardIndex];
-			if(!toPlay.includes(card))
+			if (!toPlay.includes(card))
 			{
 				toPlay.push(card);
 			}
 		}
 
 		this.playWhiteCards(toPlay, playerGuid)
-			.then(() => {
+			.then(() =>
+			{
 				Platform.forfeit(game.id, playerGuid, toPlay);
 			});
 	}

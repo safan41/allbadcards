@@ -43,7 +43,6 @@ export class CardManager
 		this.blackCards = allCards.blackCards;
 		this.whiteCards = allCards.whiteCards;
 
-
 		console.log("Done");
 	}
 
@@ -58,7 +57,7 @@ export class CardManager
 
 	public static nextBlackCard(gameItem: GameItem)
 	{
-		const allowedIds = gameItem.includedPacks.reduce((acc, packName) => {
+		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) => {
 			const pack = this.packs[packName];
 			acc.push(...pack.black);
 			return acc;
@@ -92,10 +91,10 @@ export class CardManager
 		const foundBlackCard = this.blackCards[gameItem.blackCard];
 
 		const targetHandSize = foundBlackCard?.pick === 3
-			? 9
-			: 7;
+			? 11
+			: 10;
 
-		const allowedIds = gameItem.includedPacks.reduce((acc, packName) => {
+		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) => {
 			const pack = this.packs[packName];
 			acc.push(...pack.white);
 			return acc;
@@ -118,8 +117,6 @@ export class CardManager
 			}, {} as { [key: string]: number[] });
 
 		newGame.usedWhiteCards = usedWhiteCards;
-
-		await GameManager.updateGame(newGame);
 
 		return newHands;
 	}

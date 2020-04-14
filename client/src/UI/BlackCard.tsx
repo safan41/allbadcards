@@ -2,9 +2,12 @@ import * as React from "react";
 import {Card} from "@material-ui/core";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
+import {ReactNode} from "react";
+import sanitize from "sanitize-html";
 
 interface IBlackCardProps
 {
+	children?: string;
 }
 
 interface DefaultProps
@@ -46,6 +49,9 @@ export class BlackCard extends React.Component<Props, State>
 
 	public render()
 	{
+		const children = this.props.children?.replace(/_/g, "_________") ?? "";
+		const sanitized = sanitize(children);
+
 		return (
 			<Card
 				style={{
@@ -59,7 +65,7 @@ export class BlackCard extends React.Component<Props, State>
 			>
 				<CardContent>
 					<Typography variant={"h5"} style={{color: "white"}}>
-						{this.props.children}
+						<span dangerouslySetInnerHTML={{__html: sanitized}} />
 					</Typography>
 				</CardContent>
 			</Card>

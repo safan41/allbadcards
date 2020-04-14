@@ -27,7 +27,7 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 
 	const onClickStart = () =>
 	{
-		Platform.startGame(UserDataStore.state.playerGuid, props.id, gameData.includedPacks, gameData.includedCardcastPacks)
+		Platform.startGame(UserDataStore.state.playerGuid, props.id, gameData.includedPacks, gameData.includedCardcastPacks, gameData.roundsRequired, gameData.password)
 			.catch(e => console.error(e));
 	};
 

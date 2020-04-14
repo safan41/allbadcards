@@ -1,4 +1,4 @@
-type Environments = "local" | "prod";
+type Environments = "local" | "prod" | "beta";
 
 declare const __SERVER_ENV__: Environments;
 declare const __PORT__: number;
@@ -19,6 +19,9 @@ export class Config
 		{
 			case "local":
 				host = "http://jlauer.local:5000";
+				break;
+			case "beta":
+				host = "http://beta.allbad.cards";
 				break;
 			case "prod":
 				host = "https://allbad.cards";

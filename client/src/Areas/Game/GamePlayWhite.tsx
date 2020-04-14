@@ -13,6 +13,7 @@ import {Confirmation} from "./Components/Confirmation";
 import {WhiteCardHand} from "./Components/WhiteCardHand";
 import Tooltip from "@material-ui/core/Tooltip";
 import LinearProgress from "@material-ui/core/LinearProgress";
+import {PickWinner} from "./Components/PickWinner";
 
 interface IGamePlayWhiteProps
 {
@@ -163,7 +164,6 @@ export class GamePlayWhite extends React.Component<Props, State>
 		const remainingPlayerGuids = Object.keys(players ?? {})
 			.filter(pg => !(pg in (roundCards ?? {})) && pg !== chooserGuid);
 
-		const playersAreRemaining = remainingPlayerGuids.length > 0;
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
 		const chooser = players?.[chooserGuid!]?.nickname;
 
@@ -177,8 +177,11 @@ export class GamePlayWhite extends React.Component<Props, State>
 
 		let targetPicked = gameData.blackCardDef?.pick ?? 1;
 
+		const roundCardKeys = Object.keys(roundCards ?? {});
+		const revealedIndex = this.state.gameData.game?.revealIndex ?? 0;
 		const metPickTarget = targetPicked <= this.state.pickedCards.length;
-		const revealTime = !playersAreRemaining && gameData.game.revealIndex >= 0 && gameData.game.revealIndex <= Object.keys(roundCards).length;
+		const timeToPick = remainingPlayers.length === 0;
+		const revealMode = timeToPick && revealedIndex < roundCardKeys.length;
 
 		return (
 			<div style={{paddingBottom: "4rem"}}>
@@ -188,7 +191,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 					</Typography>
 					{!hasWinner && (
 						<div style={{marginBottom: "1rem"}}>
-							<Typography>
+							<Typography variant={"h5"}>
 								{waitingLabel}
 							</Typography>
 						</div>
@@ -210,7 +213,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 					<ShowWinner/>
 				</Grid>
 				<Divider style={{margin: "1rem 0"}}/>
-				{!hasWinner && roundStarted && !revealTime && (
+				{!hasWinner && roundStarted && !revealMode && (
 					<Grid container spacing={2}>
 						<WhiteCardHand
 							gameData={gameData}
@@ -219,7 +222,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 							onPickUpdate={this.onPickUpdate}
 						/>
 
-						{!hasPlayed && !didForfeit && !revealTime && (
+						{!hasPlayed && !didForfeit && !revealMode && (
 							<Grid item xs={12} style={{display: "flex", justifyContent: "center", padding: "4rem 0 2rem"}}>
 								<Tooltip enterTouchDelay={0} enterDelay={0} title={canUseMyCardsSuck ? "Forfeit round and get new cards?" : "You can only do this every 5 rounds"} arrow>
 									<div>
@@ -227,7 +230,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 											size={"large"}
 											variant={"contained"}
 											color={"primary"}
-											disabled={hasPlayed || revealTime || !roundStarted || !canUseMyCardsSuck}
+											disabled={hasPlayed || revealMode || !roundStarted || !canUseMyCardsSuck}
 											onClick={this.onForfeit}
 											style={{
 												marginLeft: "0.5rem"
@@ -242,7 +245,14 @@ export class GamePlayWhite extends React.Component<Props, State>
 					</Grid>
 				)}
 
-				{!hasPlayed && !didForfeit && !revealTime && metPickTarget && (
+				<PickWinner
+					canPick={false}
+					hasWinner={hasWinner}
+					revealMode={revealMode}
+					timeToPick={timeToPick}
+				/>
+
+				{!hasPlayed && !didForfeit && !revealMode && metPickTarget && (
 					<Confirmation>
 						<Button
 							size={"large"}
