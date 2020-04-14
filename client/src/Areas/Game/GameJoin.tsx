@@ -7,6 +7,8 @@ import {Platform} from "../../Global/Platform/platform";
 import {UserDataStore} from "../../Global/DataStore/UserDataStore";
 import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 import {NicknameDialog} from "../../UI/NicknameDialog";
+import {useHistory} from "react-router";
+import {SiteRoutes} from "../../Global/Routes/Routes";
 
 interface IGameJoinProps
 {
@@ -24,6 +26,7 @@ const useStyles = makeStyles({
 
 const GameJoin: React.FC<IGameJoinProps> = (props) =>
 {
+	const history = useHistory();
 	const [userData, setUserData] = useState(UserDataStore.state);
 	const [gameData, setGameData] = useState(GameDataStore.state);
 	const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
@@ -39,6 +42,12 @@ const GameJoin: React.FC<IGameJoinProps> = (props) =>
 		setNicknameDialogOpen(true);
 	};
 
+	const onSpectate = () =>
+	{
+		Platform.joinGame(userData.playerGuid, props.id, "", true)
+			.catch(e => alert(e));
+	};
+
 	const onNicknameClose = () =>
 	{
 		setNicknameDialogOpen(false);
@@ -50,7 +59,8 @@ const GameJoin: React.FC<IGameJoinProps> = (props) =>
 			.catch(e => alert(e));
 	};
 
-	const joined = userData.playerGuid in (gameData.game?.players ?? {});
+	const joined = userData.playerGuid in (gameData.game?.players ?? {})
+		|| userData.playerGuid in (gameData.game?.spectators ?? {});
 
 	return (
 		<GamePreview id={props.id}>
@@ -58,6 +68,10 @@ const GameJoin: React.FC<IGameJoinProps> = (props) =>
 				<>
 					<Button variant={"contained"} color={"primary"} onClick={onJoinClick}>
 						Join
+					</Button>
+
+					<Button variant={"contained"} color={"primary"} onClick={onSpectate} style={{marginLeft: "1rem"}}>
+						Spectate
 					</Button>
 
 					<NicknameDialog

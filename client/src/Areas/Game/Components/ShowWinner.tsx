@@ -13,6 +13,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
+import sanitize from "sanitize-html";
 
 interface IShowWinnerProps
 {
@@ -88,7 +89,7 @@ export class ShowWinner extends React.Component<Props, State>
 					<WhiteCard style={{marginBottom: "0.5rem"}}>
 						{winnerCards.map(card => card && (
 							<>
-								<div>{card.response}</div>
+								<div dangerouslySetInnerHTML={{__html: sanitize(card)}} />
 								<Divider/>
 							</>
 						))}

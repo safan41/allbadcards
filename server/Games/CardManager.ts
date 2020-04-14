@@ -1,143 +1,73 @@
 import {GameItem, GameManager} from "./GameManager";
 import fs from "fs";
 import * as path from "path";
-import levenshtein from "js-levenshtein";
 
-interface ICard
+interface BlackCard
 {
-	id: number;
+	text: string;
+	pick: number;
 }
 
-interface IBlackCard extends ICard
-{
-	prompt: string;
-	special: string;
-	isDuplicate: boolean;
-}
+type WhiteCard = string;
 
-interface IWhiteCard extends ICard
+interface ICardPack
 {
-	response: string;
-	isDuplicate: boolean;
+	name: string;
+	black: number[];
+	white: number[];
 }
 
 export class CardManager
 {
-	public static blackCards: IBlackCard[];
-	public static whiteCards: IWhiteCard[];
-	private static updateDupes = false;
+	public static blackCards: BlackCard[];
+	public static whiteCards: WhiteCard[];
+	public static packs: { [key: string]: ICardPack } = {};
+	public static packOrder: string[];
 
 	public static initialize()
 	{
-		const promptsPath = path.resolve(process.cwd(), "./server/data/prompts.json");
-		const responsesPath = path.resolve(process.cwd(), "./server/data/responses.json");
+		const allCardsPath = path.resolve(process.cwd(), "./server/data/all_cards.json");
+		const allCardsFile = fs.readFileSync(allCardsPath, "utf8");
 
-		const blackCardsFile = fs.readFileSync(promptsPath, "utf8");
-		const whiteCardsFile = fs.readFileSync(responsesPath, "utf8");
-		const ogBlackCards = JSON.parse(blackCardsFile) as IBlackCard[];
-		const ogWhiteCards = JSON.parse(whiteCardsFile) as IWhiteCard[];
+		const allCards = JSON.parse(allCardsFile);
+		const packsKeys = Object.keys(allCards).filter(k =>
+			k !== "blackCards"
+			&& k !== "whiteCards"
+			&& k !== "order");
 
-		if(this.updateDupes)
-		{
-			const [dedupedWhite, dedupedBlack] = this.findDupes(ogWhiteCards, ogBlackCards);
-			ogWhiteCards.forEach(wc => {
-				if(!dedupedWhite.includes(wc))
-				{
-					wc
-						.isDuplicate = true;
-				}
-			});
-			ogBlackCards.forEach(bc => {
-				if(!dedupedBlack.includes(bc))
-				{
-					bc.isDuplicate = true;
-				}
-			});
+		packsKeys.forEach(k => {
+			this.packs[k] = allCards[k];
+		});
 
-			fs.writeFileSync(promptsPath, JSON.stringify(ogBlackCards, null, 4));
-			fs.writeFileSync(responsesPath, JSON.stringify(ogWhiteCards, null, 4));
-		}
-
-		this.whiteCards = ogWhiteCards.filter(c => !c.isDuplicate);
-		this.blackCards = ogBlackCards.filter(c => !c.isDuplicate);
+		this.packOrder = allCards.order;
+		this.blackCards = allCards.blackCards;
+		this.whiteCards = allCards.whiteCards;
 
 		console.log("Done");
 	}
 
-	private static findDupes(ogWhiteCards: IWhiteCard[], ogBlackCards: IBlackCard[]): [IWhiteCard[], IBlackCard[]]
+	private static getAllowedCard(cards: number[], usedCards: number[]): number
 	{
-		/**
-		 * Remove all the duplicate cards, based on a graduated levenshtein distance.
-		 * Cards with < 7 characters will be checked for an exact, case insensitive match.
-		 * Cards with > 7 characters will be checked for a levenshtein distance of ~15% of the string length.
-		 *      e.g. String with length 7 will fail when matched with levenshtein distance of 1. String of length 14 will fail with LD of 2, etc.
-		 * @param {T[]} acc The accumulator
-		 * @param {T} card The card to match against
-		 * @param {(card: T) => string} getCardProperty Returns the property to check in each card
-		 * @returns {T | undefined}
-		 */
-		const doMatch = <T extends ICard>(acc: T[], card: T, getCardProperty: (card: T) => string) => {
-			return acc.find(c => {
-				const cVal = getCardProperty(c);
-				const cardVal = getCardProperty(card);
-				const isExact = cVal.toLowerCase() === cardVal.toLowerCase();
-				const levElligible = cVal.length > 7;
-				const levDist = Math.floor(cVal.length / 7);
-				const isLevMatch = levElligible && levenshtein(cVal, cardVal) < levDist;
-				return isExact || isLevMatch;
-			});
-		};
+		const allowedCards = cards.filter(a => !usedCards.includes(a));
+		const index = Math.floor(Math.random() * allowedCards.length);
+		const newCardId = allowedCards[index];
 
-		const dedupedBlack = ogBlackCards.reduce((acc, card) =>
-		{
-			const matchFound = doMatch(acc, card, (card) => card.prompt);
-
-			if (!matchFound)
-			{
-				acc.push(card);
-			}
-
-			return acc;
-		}, [] as IBlackCard[]);
-
-		const dedupedWhite = ogWhiteCards.reduce((acc, card) =>
-		{
-			const matchFound = doMatch(acc, card, (card) => card.response);
-
-			if (!matchFound)
-			{
-				acc.push(card);
-			}
-
-			return acc;
-		}, [] as IWhiteCard[]);
-
-		return [dedupedWhite, dedupedBlack];
-	}
-
-	private static getAllowedCard(cards: ICard[], usedCards: number[])
-	{
-		const allowedCards = cards.filter(a => usedCards.indexOf(a.id) === -1);
-		const allowedIds = allowedCards.map(c => c.id);
-		const index = Math.floor(Math.random() * allowedIds.length);
-		const newCardId = allowedIds[index];
-		const newCard = allowedCards.find(c => c.id === newCardId);
-
-		if (!newCard)
-		{
-			throw new Error("Unable to get valid card");
-		}
-
-		return newCard;
+		return newCardId;
 	}
 
 	public static nextBlackCard(gameItem: GameItem)
 	{
-		const newCard = this.getAllowedCard(this.blackCards, gameItem.usedBlackCards);
+		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) => {
+			const pack = this.packs[packName];
+			acc.push(...pack.black);
+			return acc;
+		}, [] as number[]);
+
+		const newCard = this.getAllowedCard(allowedIds, gameItem.usedBlackCards);
 
 		const newGame = {...gameItem};
-		newGame.blackCard = newCard.id;
-		newGame.usedBlackCards.push(newCard.id);
+		newGame.blackCard = newCard;
+		newGame.usedBlackCards.push(newCard);
 
 		return newGame;
 	}
@@ -158,11 +88,17 @@ export class CardManager
 			usedWhiteCards = [];
 		}
 
-		const foundBlackCard = this.blackCards.find(c => c.id === gameItem.blackCard);
+		const foundBlackCard = this.blackCards[gameItem.blackCard];
 
-		const targetHandSize = foundBlackCard?.special === "DRAW 2, PICK 3"
-			? 9
-			: 7;
+		const targetHandSize = foundBlackCard?.pick === 3
+			? 11
+			: 10;
+
+		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) => {
+			const pack = this.packs[packName];
+			acc.push(...pack.white);
+			return acc;
+		}, [] as number[]);
 
 		const newHands = playerKeys
 			.reduce((hands, playerGuid) =>
@@ -171,10 +107,10 @@ export class CardManager
 
 				while (hands[playerGuid].length < targetHandSize)
 				{
-					const newCard = this.getAllowedCard(this.whiteCards, usedWhiteCards);
-					usedWhiteCards.push(newCard.id);
+					const newCard = this.getAllowedCard(allowedIds, usedWhiteCards);
+					usedWhiteCards.push(newCard);
 
-					hands[playerGuid].push(newCard.id);
+					hands[playerGuid].push(newCard);
 				}
 
 				return hands;
@@ -182,18 +118,16 @@ export class CardManager
 
 		newGame.usedWhiteCards = usedWhiteCards;
 
-		await GameManager.updateGame(newGame);
-
 		return newHands;
 	}
 
 	public static getWhiteCard(cardId: number)
 	{
-		return this.whiteCards.find(c => c.id === cardId);
+		return this.whiteCards[cardId];
 	}
 
 	public static getBlackCard(cardId: number)
 	{
-		return this.blackCards.find(c => c.id === cardId);
+		return this.blackCards[cardId];
 	}
 }

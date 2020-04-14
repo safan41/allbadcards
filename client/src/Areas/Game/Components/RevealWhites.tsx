@@ -5,6 +5,7 @@ import Divider from "@material-ui/core/Divider";
 import Button from "@material-ui/core/Button";
 import {GameDataStore, IGameDataStorePayload} from "../../../Global/DataStore/GameDataStore";
 import {IUserData, UserDataStore} from "../../../Global/DataStore/UserDataStore";
+import sanitize from "sanitize-html";
 
 interface IRevealWhitesProps
 {
@@ -87,7 +88,7 @@ export class RevealWhites extends React.Component <Props, State>
 						<WhiteCard key={revealedIndex} style={{marginBottom: "0.5rem"}}>
 							{cardsRevealed.map(card => card && (
 								<>
-									<div>{card.response}</div>
+									<div dangerouslySetInnerHTML={{__html: sanitize(card)}} />
 									<Divider style={{margin: "1rem 0"}}/>
 								</>
 							))}

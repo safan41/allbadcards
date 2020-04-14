@@ -10,6 +10,10 @@ import Button from "@material-ui/core/Button";
 import {makeStyles} from "@material-ui/styles";
 import {UserDataStore} from "../../../Global/DataStore/UserDataStore";
 import {Platform} from "../../../Global/Platform/platform";
+import ListItemAvatar from "@material-ui/core/ListItemAvatar";
+import Avatar from "@material-ui/core/Avatar";
+import Typography from "@material-ui/core/Typography";
+import {ContainerProgress} from "../../../UI/ContainerProgress";
 
 const useStyles = makeStyles({
 	iconButton: {
@@ -30,48 +34,66 @@ export const GameRoster = () =>
 		UserDataStore.listen(setUserData);
 	}, []);
 
-	if(!gameData.game)
+	if (!gameData.game || !gameData.loaded)
 	{
 		return null;
 	}
 
+	const game = gameData.game;
 	const gameId = gameData.game.id;
 
-	const onClickKick = (playerGuid: string) => {
+	const onClickKick = (playerGuid: string) =>
+	{
 		Platform.removePlayer(gameId, playerGuid, userData.playerGuid)
 			.catch(e => console.error(e));
 	};
 
-	const playerMap = gameData.game?.players ?? {};
-	const players = Object.values(playerMap);
+	const playerGuids = Object.keys(game.players);
+	const sortedPlayerGuids = [...playerGuids].sort((a, b) => game.players[b].wins - game.players[a].wins);
 
 	const isOwner = gameData.game?.ownerGuid === userData.playerGuid;
+
+	const spectatorCount = Object.keys(game.spectators).length;
 
 	return (
 		<div style={{width: "75vw", maxWidth: 500}}>
 			<List>
-				{players.map(player => (
-					<>
-						<ListItem>
-							<ListItemText>
-								{player.nickname}
-								{player.guid === gameData.game?.ownerGuid && <>
-                                    <span> (Owner)</span>
-                                </>}
-							</ListItemText>
+				{sortedPlayerGuids.map(pg =>
+				{
+					const player = game?.players[pg];
 
-							{isOwner && (
-								<ListItemSecondaryAction>
-									<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
-										<AiOutlineUserDelete/>
-									</Button>
-								</ListItemSecondaryAction>
-							)}
-						</ListItem>
-						<Divider/>
-					</>
-				))}
+					return (
+						<>
+							<ListItem>
+								<ListItemAvatar>
+									<Avatar>
+										<strong>{player.wins}</strong>
+									</Avatar>
+								</ListItemAvatar>
+								<ListItemText>
+									{player.nickname}
+									{player.guid === gameData.game?.ownerGuid && <>
+                                        <span> (Owner)</span>
+                                    </>}
+								</ListItemText>
+
+								{isOwner && (
+									<ListItemSecondaryAction>
+										<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
+											<AiOutlineUserDelete/>
+										</Button>
+									</ListItemSecondaryAction>
+								)}
+							</ListItem>
+							<Divider/>
+						</>
+					)
+				})}
 			</List>
+
+			<Typography style={{margin: "1rem 0"}}>
+				Spectators: {spectatorCount}
+			</Typography>
 		</div>
 	);
 };
