@@ -2,6 +2,7 @@ import {Express} from "express";
 import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
+import {logError, logMessage} from "../logger";
 
 const cache = apicache.middleware;
 
@@ -9,7 +10,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
 	app.get("/api/game/get", async (req, res, next) =>
 	{
-		console.log(req.url, req.query);
+		logMessage(req.url, req.query);
 
 		try
 		{
@@ -19,13 +20,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.get("/api/game/get-white-card", cache("10 minutes"), async (req, res, next) =>
 	{
-		console.log(req.url, req.query);
+		logMessage(req.url, req.query);
 		try
 		{
 			const card = CardManager.getWhiteCard(parseInt(req.query.cardId));
@@ -34,6 +36,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
@@ -42,7 +45,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 	{
 		try
 		{
-			const packIds = Object.keys(CardManager.packs);
+			const packIds = CardManager.packOrder;
 			const packs = packIds.map(packId =>
 			{
 				const packDef = CardManager.packs[packId];
@@ -57,13 +60,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.get("/api/game/get-black-card", cache("10 minutes"), async (req, res, next) =>
 	{
-		console.log(req.url, req.query);
+		logMessage(req.url, req.query);
 		try
 		{
 			const card = CardManager.getBlackCard(parseInt(req.query.cardId));
@@ -72,13 +76,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/create", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const game = await GameManager.createGame(req.body.ownerGuid, req.body.nickname);
@@ -86,13 +91,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/join", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.joinGame(req.body.playerGuid, req.body.gameId, req.body.nickname, JSON.parse(req.body.isSpectating ?? "false"));
@@ -101,13 +107,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/kick", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.kickPlayer(req.body.gameId, req.body.targetGuid, req.body.playerGuid);
@@ -116,28 +123,36 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/start", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
-			const result = await GameManager.startGame(req.body.gameId, req.body.ownerGuid, req.body.includedPacks, req.body.includedCardcastPacks);
+			const result = await GameManager.startGame(
+				req.body.gameId,
+				req.body.ownerGuid,
+				req.body.includedPacks,
+				req.body.includedCardcastPacks,
+				parseInt(req.body.requiredRounds ?? 10),
+				req.body.password);
 
 			res.send(result);
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/play-cards", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.playCard(req.body.gameId, req.body.playerGuid, req.body.cardIds);
@@ -146,13 +161,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/forfeit", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.forfeit(req.body.gameId, req.body.playerGuid, req.body.playedCards);
@@ -161,13 +177,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/reveal-next", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.revealNext(req.body.gameId, req.body.ownerGuid);
@@ -176,13 +193,30 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
+			res.send(500, {message: error.message, stack: error.stack});
+		}
+	});
+
+	app.post("/api/game/skip-black", async (req, res, next) =>
+	{
+		logMessage(req.url, req.body);
+		try
+		{
+			const result = await GameManager.skipBlack(req.body.gameId, req.body.ownerGuid);
+
+			res.send(result);
+		}
+		catch (error)
+		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/start-round", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.startRound(req.body.gameId, req.body.ownerGuid);
@@ -191,13 +225,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/select-winner-card", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.selectWinnerCard(req.body.gameId, req.body.playerGuid, req.body.winningPlayerGuid);
@@ -206,13 +241,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});
 
 	app.post("/api/game/next-round", async (req, res, next) =>
 	{
-		console.log(req.url, req.body);
+		logMessage(req.url, req.body);
 		try
 		{
 			const result = await GameManager.nextRound(req.body.gameId, req.body.playerGuid);
@@ -221,6 +257,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
+			logError(error);
 			res.send(500, {message: error.message, stack: error.stack});
 		}
 	});

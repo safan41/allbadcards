@@ -33,6 +33,7 @@ export interface GameItem
 	dateCreated: Date;
 	public: boolean;
 	players: PlayerMap;
+	spectators: PlayerMap;
 	blackCard: number;
 	// key = player guid, value = white card ID
 	roundCards: { [key: string]: number[] };
@@ -44,8 +45,12 @@ export interface GameItem
 		whiteCardIds: number[];
 	} | undefined;
 	randomOffset: number;
-	includedPacks: string[];
-	includedCardcastPacks: string[];
+	settings: {
+		password: string | null;
+		roundsToWin: number;
+		includedPacks: string[];
+		includedCardcastPacks: string[];
+	}
 }
 
 interface ICard
@@ -173,9 +178,11 @@ class _GameManager
 	private updateSocketGames(game: GameItem)
 	{
 		const playerGuids = Object.keys(game.players);
+		const spectatorGuids = Object.keys(game.spectators);
+		const allGuids = [...playerGuids, ...spectatorGuids];
 
 		// Get every socket that needs updating
-		const wsIds = playerGuids
+		const wsIds = allGuids
 			.map(pg => this.wsClientPlayerMap[pg])
 			.reduce((acc, val) => acc.concat(val), []);
 
@@ -188,7 +195,7 @@ class _GameManager
 		});
 	}
 
-	public async createGame(ownerGuid: string, nickname: string): Promise<GameItem>
+	public async createGame(ownerGuid: string, nickname: string, roundsToWin = 99, password = ""): Promise<GameItem>
 	{
 		console.log(`Creating game for ${ownerGuid}`);
 
@@ -204,6 +211,7 @@ class _GameManager
 				chooserGuid: null,
 				dateCreated: new Date(),
 				players: {[ownerGuid]: this.createPlayer(ownerGuid, nickname, false)},
+				spectators: {},
 				public: false,
 				started: false,
 				blackCard: -1,
@@ -213,8 +221,12 @@ class _GameManager
 				revealIndex: -1,
 				lastWinner: undefined,
 				randomOffset: 0,
-				includedPacks: [],
-				includedCardcastPacks: []
+				settings: {
+					roundsToWin,
+					password,
+					includedPacks: [],
+					includedCardcastPacks: []
+				}
 			};
 
 			await this.games.insertOne(initialGameItem);
@@ -246,7 +258,16 @@ class _GameManager
 
 		const newGame = {...existingGame};
 		newGame.revealIndex = 0;
-		newGame.players[playerGuid] = this.createPlayer(playerGuid, nickname, isSpectating);
+
+		const newPlayer = this.createPlayer(playerGuid, nickname, isSpectating);
+		if(isSpectating)
+		{
+			newGame.spectators[playerGuid] = newPlayer;
+		}
+		else
+		{
+			newGame.players[playerGuid] = newPlayer;
+		}
 
 		// If the game already started, deal in this new person
 		if(newGame.started)
@@ -346,7 +367,7 @@ class _GameManager
 		return newGame;
 	}
 
-	public async startGame(gameId: string, ownerGuid: string, includedPacks: string[], includedCardcastPacks: string[])
+	public async startGame(gameId: string, ownerGuid: string, includedPacks: string[], includedCardcastPacks: string[], requiredRounds = 10, password: string | null = null)
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -360,8 +381,10 @@ class _GameManager
 		const playerGuids = Object.keys(existingGame.players);
 		newGame.chooserGuid = playerGuids[0];
 		newGame.started = true;
-		newGame.includedPacks = includedPacks;
-		newGame.includedCardcastPacks = includedCardcastPacks;
+		newGame.settings.includedPacks = includedPacks;
+		newGame.settings.includedCardcastPacks = includedCardcastPacks;
+		newGame.settings.password = password;
+		newGame.settings.roundsToWin = requiredRounds;
 		const newHands = await CardManager.dealWhiteCards(newGame);
 		newGame = CardManager.nextBlackCard(newGame);
 
@@ -420,6 +443,23 @@ class _GameManager
 		newGame.revealIndex = newGame.revealIndex + 1;
 
 		await this.updateGame(newGame);
+
+		return newGame;
+	}
+
+	public async skipBlack(gameId: string, playerGuid: string)
+	{
+		const existingGame = await this.getGame(gameId);
+
+		if (existingGame.chooserGuid !== playerGuid)
+		{
+			throw new Error("You are not the chooser!");
+		}
+
+		const newGame = {...existingGame};
+		const newGameWithBlackCard = CardManager.nextBlackCard(newGame);
+
+		await this.updateGame(newGameWithBlackCard);
 
 		return newGame;
 	}

@@ -73,7 +73,7 @@ export const SponsorList = () =>
 					Sponsors: Keeping Us Running!
 				</Typography>
 				<Typography variant={"body2"} style={{padding: "1rem 0", maxWidth: "30rem", margin: "auto"}}>
-					This website operates with no ads or subscriptions. Donations and sponsorships keep us running.
+					This website operates with no ads or subscriptions. Donations and sponsorships support development and hosting.
 					Follow the Patreon link below to contribute!
 				</Typography>
 				<div>

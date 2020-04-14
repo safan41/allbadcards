@@ -12,7 +12,9 @@
     "dev": "concurrently --kill-others \"yarn server-watch\" \"yarn client\"",
     "build-client": "cd client && yarn build",
     "build-server": "node server/scripts/build.js -serverenv=prod",
+    "build-server-beta": "node server/scripts/build.js -serverenv=beta",
     "build": "yarn clean && yarn build-client && yarn build-server",
+    "build-beta": "yarn clean && yarn build-client && yarn build-server-beta",
     "finalize": "node server/scripts/finalize.js"
   },
   "author": "",

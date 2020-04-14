@@ -5,6 +5,7 @@ import * as React from "react";
 import {IGameDataStorePayload} from "../../../Global/DataStore/GameDataStore";
 import {IUserData} from "../../../Global/DataStore/UserDataStore";
 import {useState} from "react";
+import sanitize from "sanitize-html";
 
 interface Props
 {
@@ -60,7 +61,7 @@ export const WhiteCardHand: React.FC<Props> =
 		const hasPlayed = userData.playerGuid in roundCards;
 
 		const renderedCardIds = hasPlayed
-			? roundCards[userData.playerGuid]
+			? []
 			: playerCardIds;
 
 		const renderedDefs = hasPlayed ? gameData.roundCardDefs : gameData.playerCardDefs;
@@ -103,7 +104,7 @@ export const WhiteCardHand: React.FC<Props> =
 								</>
 							)}
 						>
-							{renderedDefs[cardId]}
+							<div dangerouslySetInnerHTML={{__html: sanitize(renderedDefs[cardId] ?? "")}} />
 						</WhiteCard>
 					)}
 				</Grid>

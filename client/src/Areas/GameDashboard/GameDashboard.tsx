@@ -1,6 +1,5 @@
 import * as React from "react";
-import {List} from "@material-ui/core";
-import {GiCardDraw} from "react-icons/all";
+import {FaPlus, MdArrowForward} from "react-icons/all";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, withRouter} from "react-router";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
@@ -11,7 +10,7 @@ import Container from "@material-ui/core/Container";
 import Paper from "@material-ui/core/Paper";
 import Typography from "@material-ui/core/Typography";
 import {SponsorList} from "./SponsorList";
-import CardContent from "@material-ui/core/CardContent";
+import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 
 interface IGameDashboardProps extends RouteComponentProps
 {
@@ -84,21 +83,45 @@ class GameDashboard extends React.Component<Props, State>
 	{
 		return (
 			<Container style={{textAlign: "center"}}>
-				<img style={{width: "50%", margin: "2rem auto", maxWidth: "20rem"}} src={"/logo-large.png"}/>
+				<img style={{width: "50%", margin: "2rem auto", maxWidth: "13rem"}} src={"/logo-large.png"}/>
+
+				{!GameDataStore.state.familyMode && (
+					<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "1rem"}}>
+						<Button component={p => <a {...p} href={"https://not.allbad.cards"} />}>
+							Family Edition &nbsp; <MdArrowForward/>
+						</Button>
+					</ButtonGroup>
+				)}
 				<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "2rem"}}>
 					<Button
 						variant="contained"
 						color="primary"
 						size="large"
 						style={{
-							fontSize: "2rem"
+							fontSize: "1.5rem"
 						}}
 						onClick={this.createGame}
-						startIcon={<GiCardDraw/>}
+						startIcon={<FaPlus/>}
 					>
 						New Game
 					</Button>
 				</ButtonGroup>
+				<Paper style={{padding: "1rem", margin: "3rem 0 1rem", textAlign: "left"}}>
+					<Typography>
+						<strong>Updates - 4/13</strong>
+						<li>
+							<a href={"https://not.allbad.cards"}>Family Edition!</a> At a separate domain so kids don't try to play with the other cards.
+						</li>
+						<li>Bug fixes</li>
+						<br/>
+						<strong>Updates - 4/12</strong>
+						<li>Card pack selection!</li>
+						<li>Card Czar can skip black cards if they want.</li>
+						<li>Added spectating</li>
+						<li>Improved UI for picking a winner</li>
+						<li>Many bug fixes</li>
+					</Typography>
+				</Paper>
 				<NicknameDialog
 					open={this.state.nicknameDialogOpen}
 					onClose={this.onNicknameClose}

@@ -31,6 +31,7 @@ export interface GameItem
 	dateCreated: Date;
 	public: boolean;
 	players: PlayerMap;
+	spectators: PlayerMap;
 	blackCard: number;
 	// key = player guid, value = white card ID
 	roundCards: { [key: string]: number[] };
@@ -42,6 +43,12 @@ export interface GameItem
 		whiteCardIds: number[];
 	} | undefined;
 	randomOffset: number;
+	settings: {
+		password: string | null;
+		roundsToWin: number;
+		includedPacks: string[];
+		includedCardcastPacks: string[];
+	}
 }
 
 export interface IBlackCard
@@ -144,7 +151,7 @@ class _Platform
 		});
 	}
 
-	public async startGame(ownerGuid: string, gameId: string, includedPacks: string[], includedCardcastPacks: string[])
+	public async startGame(ownerGuid: string, gameId: string, includedPacks: string[], includedCardcastPacks: string[], requiredRounds: number, password: string | null = null)
 	{
 		_Platform.trackEvent("start", gameId);
 
@@ -152,7 +159,9 @@ class _Platform
 			gameId,
 			ownerGuid,
 			includedPacks,
-			includedCardcastPacks
+			includedCardcastPacks,
+			requiredRounds,
+			password
 		});
 	}
 
@@ -212,6 +221,14 @@ class _Platform
 		return _Platform.doPost<GameItem>("/api/game/next-round", {
 			gameId,
 			playerGuid,
+		});
+	}
+
+	public async skipBlack(gameId: string, ownerGuid: string)
+	{
+		return _Platform.doPost<GameItem>("/api/game/skip-black", {
+			gameId,
+			ownerGuid,
 		});
 	}
 

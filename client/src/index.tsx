@@ -31,7 +31,7 @@ const theme = createMuiTheme({
 });
 
 ReactGA.initialize('UA-23730353-5', {
-	debug: location.hostname.includes("local")
+	debug: location.hostname.includes("local") || location.hostname.includes("beta")
 });
 ReactGA.pageview(window.location.pathname + window.location.search);
 
