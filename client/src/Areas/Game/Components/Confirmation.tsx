@@ -11,6 +11,7 @@ const useStyles = makeStyles({
 		bottom: 0,
 		left: 0,
 		width: "100%",
+		zIndex: 99
 	},
 	inner: {
 		boxSizing:"border-box",

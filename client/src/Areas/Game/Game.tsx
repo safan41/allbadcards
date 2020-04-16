@@ -11,6 +11,8 @@ import Helmet from "react-helmet";
 import {GamePlaySpectate} from "./GamePlaySpectate";
 import {Typography} from "@material-ui/core";
 import {ContainerProgress} from "../../UI/ContainerProgress";
+import Button from "@material-ui/core/Button";
+import {LoadingButton} from "../../UI/LoadingButton";
 
 interface IGameParams
 {
@@ -21,6 +23,7 @@ interface IGameState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
+	restartLoading: boolean;
 }
 
 class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
@@ -31,7 +34,8 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 
 		this.state = {
 			gameData: GameDataStore.state,
-			userData: UserDataStore.state
+			userData: UserDataStore.state,
+			restartLoading: false
 		};
 	}
 
@@ -47,6 +51,18 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 			userData: data
 		}));
 	}
+
+	private restartClick = (playerGuid: string) =>
+	{
+		this.setState({
+			restartLoading: true
+		});
+
+		GameDataStore.restart(playerGuid)
+			.finally(() => this.setState({
+				restartLoading: false
+			}));
+	};
 
 	public render()
 	{
@@ -82,14 +98,23 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 		const playerGuids = Object.keys(players ?? {});
 		const winnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 99));
 
+		const inviteLink = (settings?.inviteLink?.length ?? 0) > 25
+			? `${settings?.inviteLink?.substr(0, 25)}...`
+			: settings?.inviteLink;
+
 		return (
 			<>
 				<Helmet>
 					<title>{title}</title>
 				</Helmet>
+				{!winnerGuid && settings?.inviteLink && (
+					<Typography variant={"caption"}>
+						Chat/Video Invite: <a href={settings.inviteLink} target={"_blank"} rel={"nofollow noreferrer"}>{inviteLink}</a>
+					</Typography>
+				)}
 				{winnerGuid && (
 					<div>
-						<Typography variant={"h3"}>Game over! {players?.[winnerGuid].nickname} is the winner.</Typography>
+						<Typography variant={"h3"} style={{textAlign: "center"}}>Game over! {players?.[winnerGuid].nickname} is the winner.</Typography>
 						<div style={{
 							marginTop: "3rem",
 							textAlign: "center"
@@ -104,6 +129,16 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 								/>
 							</a>
 						</div>
+						{playerGuid === ownerGuid && (
+							<div style={{
+								marginTop: "3rem",
+								textAlign: "center"
+							}}>
+								<LoadingButton loading={this.state.restartLoading} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>
+									Restart this game?
+								</LoadingButton>
+							</div>
+						)}
 					</div>
 				)}
 				{!winnerGuid && (

@@ -16,7 +16,7 @@ const useStyles = makeStyles({
 	card: {
 		display: "flex",
 		flexDirection: "column",
-		minHeight: "33vh",
+		minHeight: "25vh",
 	}
 });
 
@@ -39,7 +39,7 @@ export const WhiteCard: React.FC<IWhiteCardProps> = (props) =>
 			style={style}
 		>
 			<CardContent style={{flex: "1"}}>
-				<Typography variant={"h5"}>
+				<Typography variant={"h6"}>
 					{children}
 				</Typography>
 			</CardContent>

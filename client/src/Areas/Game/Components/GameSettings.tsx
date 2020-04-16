@@ -1,17 +1,11 @@
-import React, {useEffect, useState} from "react";
-import {Slider, Typography} from "@material-ui/core";
-import {useDataStore, usePrevious} from "../../../Global/Utils/HookUtils";
+import React, {ChangeEvent, useState} from "react";
+import {Slider, TextField, Typography} from "@material-ui/core";
+import {useDataStore} from "../../../Global/Utils/HookUtils";
 import {GameDataStore} from "../../../Global/DataStore/GameDataStore";
-import MenuItem from "@material-ui/core/MenuItem";
 import Checkbox from "@material-ui/core/Checkbox";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import ListItemText from "@material-ui/core/ListItemText";
 import FormControl from "@material-ui/core/FormControl";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import FormGroup from "@material-ui/core/FormGroup";
-import FormLabel from "@material-ui/core/FormLabel";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Button from "@material-ui/core/Button";
 import ExpansionPanel from "@material-ui/core/ExpansionPanel";
@@ -20,10 +14,11 @@ import {ExpandMore} from "@material-ui/icons";
 import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import Divider from "@material-ui/core/Divider";
 
+const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+
 export const GameSettings = () =>
 {
 	const gameData = useDataStore(GameDataStore);
-	let roundsForWin = 10;
 
 	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{
@@ -59,33 +54,18 @@ export const GameSettings = () =>
 		GameDataStore.setIncludedPacks(gameData.packs?.slice(32).map(p => p.packId));
 	};
 
-
 	return (
 		<div>
-			<Typography variant={"h3"}>Game Settings</Typography>
-
 			<div style={{marginTop: "1rem"}}>
 				<ExpansionPanel>
 					<ExpansionPanelSummary
 						expandIcon={<ExpandMore/>}
 					>
-						<Typography>Gameplay</Typography>
+						<Typography>Game</Typography>
 					</ExpansionPanelSummary>
-					<ExpansionPanelDetails>
-						<FormControl component="fieldset" style={{width: "100%"}}>
-							<Divider style={{marginBottom: "1rem"}}/>
-							<Typography>Rounds required to win: {gameData.roundsRequired}</Typography>
-							<Slider
-								defaultValue={roundsForWin}
-								onChange={(e, v) => GameDataStore.setRequiredRounds(v as number)}
-								aria-labelledby="discrete-slider"
-								valueLabelDisplay="auto"
-								step={1}
-								marks
-								min={3}
-								max={50}
-							/>
-						</FormControl>
+					<ExpansionPanelDetails style={{display: "block"}}>
+						<SliderField/>
+						<UrlField/>
 					</ExpansionPanelDetails>
 				</ExpansionPanel>
 				{!gameData.familyMode && (
@@ -130,5 +110,66 @@ export const GameSettings = () =>
 				)}
 			</div>
 		</div>
+	);
+};
+
+let timeout = 0;
+const UrlField = () =>
+{
+	const [url, setUrl] = useState("");
+	const [invalid, setInvalid] = useState(false);
+
+	const setOuter = (value: string) =>
+	{
+		setUrl(value);
+
+		clearTimeout(timeout);
+		timeout = window.setTimeout(() =>
+		{
+			const invalid = value.length > 0 && !value.match(urlRegex);
+			setInvalid(invalid);
+			if (!invalid)
+			{
+				GameDataStore.setInviteLink(value);
+			}
+		}, 500);
+	};
+
+	return (
+		<FormControl component="fieldset" style={{width: "100%"}}>
+			<Divider style={{margin: "1rem 0"}}/>
+			<Typography style={{marginBottom: "0.5rem"}}>Chat / Video invite URL</Typography>
+			<TextField value={url} label="URL" variant="outlined" onChange={(e) => setOuter(e.target.value)} error={invalid}/>
+		</FormControl>
+	);
+};
+
+let sliderTimeout = 0;
+const SliderField = () =>
+{
+	const gameData = useDataStore(GameDataStore);
+
+	const onChange = (e: ChangeEvent<{}>, v: number | number[]) => {
+		clearTimeout(sliderTimeout);
+		sliderTimeout = window.setTimeout(() => {
+			GameDataStore.setRequiredRounds(v as number)
+		}, 500);
+	};
+
+	return (
+		<FormControl component="fieldset" style={{width: "100%"}}>
+			<Divider style={{margin: "1rem 0"}}/>
+			<Typography>Rounds required to win: {gameData.roundsRequired}</Typography>
+			<Slider
+				defaultValue={gameData.roundsRequired}
+				onChange={onChange}
+				aria-labelledby="discrete-slider"
+				valueLabelDisplay="auto"
+				step={1}
+				marks
+				min={1}
+				max={50}
+			/>
+		</FormControl>
 	);
 };

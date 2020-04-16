@@ -4,7 +4,7 @@
   "description": "",
   "main": "server/server.ts",
   "scripts": {
-    "installall": "yarn install --check-files && cd client && yarn install --check-files",
+    "installall": "yarn install && cd client && yarn install",
     "client": "cd client && yarn start",
     "server": "node -r ts-node/register --inspect=5001 --nolazy server/server.ts --runInBand",
     "server-watch": "nodemon",
@@ -20,6 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sentry/node": "^5.15.4",
     "abortcontroller-polyfill": "^1.3.0",
     "apicache": "^1.5.3",
     "client-oauth2": "^4.2.5",

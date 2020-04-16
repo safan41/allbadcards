@@ -61,6 +61,7 @@ export const GameRoster = () =>
 				{sortedPlayerGuids.map(pg =>
 				{
 					const player = game?.players[pg];
+					const isSelf = pg === userData.playerGuid;
 
 					return (
 						<>
@@ -77,7 +78,7 @@ export const GameRoster = () =>
                                     </>}
 								</ListItemText>
 
-								{isOwner && (
+								{isOwner || isSelf && (
 									<ListItemSecondaryAction>
 										<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
 											<AiOutlineUserDelete/>

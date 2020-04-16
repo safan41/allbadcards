@@ -8,6 +8,7 @@ import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import {MuiThemeProvider} from "@material-ui/core";
 import {SimplePaletteColorOptions} from "@material-ui/core/styles";
 import ReactGA from "react-ga";
+import * as Sentry from "@sentry/browser";
 
 const primary: SimplePaletteColorOptions = {
 	main: "#000",
@@ -29,6 +30,8 @@ const theme = createMuiTheme({
 		secondary,
 	},
 });
+
+Sentry.init({dsn: "https://6d23e717863b4e2e9870dad240f4e965@o377988.ingest.sentry.io/5200785"});
 
 ReactGA.initialize('UA-23730353-5', {
 	debug: location.hostname.includes("local") || location.hostname.includes("beta")

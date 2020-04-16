@@ -10,6 +10,7 @@ import Typography from "@material-ui/core/Typography";
 import {GameSettings} from "./Components/GameSettings";
 import {CopyGameLink} from "../../UI/CopyGameLink";
 import Divider from "@material-ui/core/Divider";
+import {LoadingButton} from "../../UI/LoadingButton";
 
 interface IGameStartProps
 {
@@ -19,6 +20,7 @@ interface IGameStartProps
 const GameStart: React.FC<IGameStartProps> = (props) =>
 {
 	const [gameData, setGameData] = useState(GameDataStore.state);
+	const [startLoading, setStartLoading] = useState(false);
 
 	useEffect(() =>
 	{
@@ -27,8 +29,18 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 
 	const onClickStart = () =>
 	{
-		Platform.startGame(UserDataStore.state.playerGuid, props.id, gameData.includedPacks, gameData.includedCardcastPacks, gameData.roundsRequired, gameData.password)
-			.catch(e => console.error(e));
+		setStartLoading(true);
+
+		Platform.startGame(
+			UserDataStore.state.playerGuid,
+			props.id,
+			gameData.includedPacks,
+			gameData.includedCardcastPacks,
+			gameData.roundsRequired,
+			gameData.inviteLink,
+			gameData.password)
+			.catch(e => console.error(e))
+			.finally(() => setStartLoading(false));
 	};
 
 	const players = Object.keys(gameData.game?.players ?? {});
@@ -36,10 +48,11 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 
 	return (
 		<GamePreview id={props.id}>
-			<Button variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
+			<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
 				Start
-			</Button>
-			<Divider style={{margin: "2rem 0"}} />
+			</LoadingButton>
+			<Divider style={{margin: "3rem 0"}} />
+			<Typography variant={"h4"}>Settings</Typography>
 			<GameSettings/>
 		</GamePreview>
 	);
