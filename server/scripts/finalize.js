@@ -4,22 +4,14 @@ const fs = require('fs-extra');
 
 const appDirectory = fs.realpathSync(process.cwd());
 const resolve = relativePath => path.resolve(appDirectory, relativePath);
-const output = resolve("output");
-const clientBuild = resolve("client/build");
-const clientOutput = resolve("output/client");
 
-function copyOutput() {
-    fs.copySync(clientBuild, clientOutput, {
-        dereference: true
-    });
-}
-
-const finalize = () => {
-    copyOutput();
-    fs.mkdir(path.resolve(output, "server/config"));
-    fs.mkdir(path.resolve(output, "server/data"));
-    fs.copyFileSync(resolve("server/config/keys.json"), path.resolve(output, "server/config/keys.json"));
-    fs.copySync(resolve("server/data"), path.resolve(output, "server/data"));
+const finalize = (buildDir, outputDir) => {
+    fs.mkdir(path.resolve(outputDir, "server/config"));
+    fs.mkdir(path.resolve(outputDir, "server/data"));
+    fs.copySync(resolve("client/build"), path.resolve(outputDir, "client"), { dereference: true });
+    fs.copyFileSync(resolve("server/config/keys.json"), path.resolve(outputDir, "server/config/keys.json"));
+    fs.copySync(resolve("server/data"), path.resolve(outputDir, "server/data"));
+    fs.copyFileSync(resolve("server/start.bat"), path.resolve(buildDir, "start.bat"));
 };
 
 module.exports = {
