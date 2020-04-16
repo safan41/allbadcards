@@ -35,12 +35,12 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 	}
 
 	return (
-		<div>
-			<Typography variant={"h3"}>Game</Typography>
-			<Typography variant={"h5"} className={classes.gameId}>{props.id}</Typography>
+		<div style={{paddingTop: "2rem"}}>
+			<Typography variant={"h4"}>Game</Typography>
+			<br/>
 			<CopyGameLink />
-			<Divider style={{margin: "2rem 0"}} />
-			<Typography className={classes.playersLabel} variant={"h3"}>Players</Typography>
+			<Divider style={{margin: "3rem 0"}} />
+			<Typography className={classes.playersLabel} variant={"h4"}>Players</Typography>
 			<GameRoster />
 			{props.children}
 		</div>

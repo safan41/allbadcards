@@ -1,10 +1,16 @@
-import {Express} from "express";
+import {Express, Response} from "express";
 import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
 import {logError, logMessage} from "../logger";
 
 const cache = apicache.middleware;
+
+const onError = (res: Response, error: Error) =>
+{
+	res.status(500).send({message: error.message, stack: error.stack});
+	throw error;
+}
 
 export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
@@ -15,13 +21,11 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		try
 		{
 			const game = await GameManager.getGame(req.query.gameId);
-
 			res.send(game);
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -36,8 +40,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -60,8 +63,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -76,8 +78,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -91,8 +92,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -107,8 +107,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -123,8 +122,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -139,14 +137,38 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 				req.body.includedPacks,
 				req.body.includedCardcastPacks,
 				parseInt(req.body.requiredRounds ?? 10),
+				req.body.inviteLink,
 				req.body.password);
 
 			res.send(result);
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
+		}
+	});
+
+	app.post("/api/game/restart", async (req, res, next) =>
+	{
+		logMessage(req.url, req.body);
+		try
+		{
+			let result = await GameManager.restartGame(req.body.gameId, req.body.playerGuid);
+			result = await GameManager.startGame(
+				result.id,
+				result.ownerGuid,
+				result.settings.includedPacks,
+				result.settings.includedCardcastPacks,
+				result.settings.roundsToWin,
+				result.settings.inviteLink,
+				result.settings.password
+			);
+
+			res.send(result);
+		}
+		catch (error)
+		{
+			onError(res, error);
 		}
 	});
 
@@ -161,8 +183,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -177,8 +198,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -193,8 +213,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -209,8 +228,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -225,8 +243,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -241,8 +258,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 
@@ -257,8 +273,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			logError(error);
-			res.send(500, {message: error.message, stack: error.stack});
+			onError(res, error);
 		}
 	});
 

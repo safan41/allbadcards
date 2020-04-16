@@ -13,6 +13,7 @@ class _ErrorDataStore extends DataStore<IErrorDataStorePayload>
 
 	public add = (error: Error) =>
 	{
+		console.error(error);
 		this.update({
 			errors: [...this.state.errors, error]
 		});

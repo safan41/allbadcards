@@ -44,6 +44,7 @@ export interface GameItem
 	} | undefined;
 	randomOffset: number;
 	settings: {
+		inviteLink: string | null;
 		password: string | null;
 		roundsToWin: number;
 		includedPacks: string[];
@@ -151,7 +152,14 @@ class _Platform
 		});
 	}
 
-	public async startGame(ownerGuid: string, gameId: string, includedPacks: string[], includedCardcastPacks: string[], requiredRounds: number, password: string | null = null)
+	public async startGame(
+		ownerGuid: string,
+		gameId: string,
+		includedPacks: string[],
+		includedCardcastPacks: string[],
+		requiredRounds: number,
+		inviteLink: string | null = null,
+		password: string | null = null)
 	{
 		_Platform.trackEvent("start", gameId);
 
@@ -161,6 +169,7 @@ class _Platform
 			includedPacks,
 			includedCardcastPacks,
 			requiredRounds,
+			inviteLink,
 			password
 		});
 	}
@@ -184,6 +193,16 @@ class _Platform
 			gameId,
 			playerGuid,
 			playedCards
+		});
+	}
+
+	public async restart(gameId: string, playerGuid: string)
+	{
+		_Platform.trackEvent("game-restart", gameId);
+
+		return _Platform.doPost<GameItem>("/api/game/restart", {
+			gameId,
+			playerGuid,
 		});
 	}
 

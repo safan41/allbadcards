@@ -41,7 +41,8 @@ module.exports = (serverEnv) => ({
         new FriendlyErrorsWebpackPlugin(),
         new webpack.DefinePlugin({
             __SERVER_ENV__: `\"${serverEnv}\"`,
-            __PORT__: portEnvMap[serverEnv]
+            __PORT__: portEnvMap[serverEnv],
+            __VERSION__: Date.now()
         })
     ]
 });

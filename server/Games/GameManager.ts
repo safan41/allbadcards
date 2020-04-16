@@ -48,6 +48,7 @@ export interface GameItem
 	settings: {
 		password: string | null;
 		roundsToWin: number;
+		inviteLink: string | null;
 		includedPacks: string[];
 		includedCardcastPacks: string[];
 	}
@@ -224,6 +225,7 @@ class _GameManager
 				settings: {
 					roundsToWin,
 					password,
+					inviteLink: null,
 					includedPacks: [],
 					includedCardcastPacks: []
 				}
@@ -260,7 +262,7 @@ class _GameManager
 		newGame.revealIndex = 0;
 
 		const newPlayer = this.createPlayer(playerGuid, nickname, isSpectating);
-		if(isSpectating)
+		if (isSpectating)
 		{
 			newGame.spectators[playerGuid] = newPlayer;
 		}
@@ -270,13 +272,10 @@ class _GameManager
 		}
 
 		// If the game already started, deal in this new person
-		if(newGame.started)
+		if (newGame.started && !isSpectating)
 		{
-			const newHands = await CardManager.dealWhiteCards(newGame);
-			Object.keys(newGame.players).forEach(playerGuid =>
-			{
-				newGame.players[playerGuid].whiteCards = newHands[playerGuid];
-			});
+			const newGameWithCards = await CardManager.dealWhiteCards(newGame);
+			newGame.players[playerGuid].whiteCards = newGameWithCards.players[playerGuid].whiteCards;
 		}
 
 		await this.updateGame(newGame);
@@ -288,16 +287,16 @@ class _GameManager
 	{
 		const existingGame = await this.getGame(gameId);
 
-		if (existingGame.ownerGuid !== ownerGuid)
+		if (existingGame.ownerGuid !== ownerGuid && targetGuid !== ownerGuid)
 		{
-			throw new Error("You are not the owner!");
+			throw new Error("You don't have kick permission!",);
 		}
 
 		const newGame = {...existingGame};
 		delete newGame.players[targetGuid];
 
 		// If the owner deletes themselves, pick a new owner
-		if(targetGuid === ownerGuid)
+		if (targetGuid === ownerGuid)
 		{
 			newGame.ownerGuid = Object.keys(newGame.players)[0];
 		}
@@ -316,7 +315,7 @@ class _GameManager
 			throw new Error("You are not the cchooser!");
 		}
 
-		const newGame = {...existingGame};
+		let newGame = {...existingGame};
 
 		// Remove last winner
 		newGame.lastWinner = undefined;
@@ -353,21 +352,25 @@ class _GameManager
 		newGame.randomOffset = Math.floor(Math.random() * playerGuids.length);
 
 		// Deal a new hand
-		const newHands = await CardManager.dealWhiteCards(newGame);
-		Object.keys(newGame.players).forEach(playerGuid =>
-		{
-			newGame.players[playerGuid].whiteCards = newHands[playerGuid];
-		});
+		newGame = await CardManager.dealWhiteCards(newGame);
 
 		// Grab the new black card
-		const newGameWithBlackCard = CardManager.nextBlackCard(newGame);
+		newGame = CardManager.nextBlackCard(newGame);
 
-		await this.updateGame(newGameWithBlackCard);
+		await this.updateGame(newGame);
 
 		return newGame;
 	}
 
-	public async startGame(gameId: string, ownerGuid: string, includedPacks: string[], includedCardcastPacks: string[], requiredRounds = 10, password: string | null = null)
+	public async startGame(
+		gameId: string,
+		ownerGuid: string,
+		includedPacks: string[],
+		includedCardcastPacks: string[],
+		requiredRounds = 10,
+		inviteLink: string | null = null,
+		password: string | null = null
+	)
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -385,13 +388,44 @@ class _GameManager
 		newGame.settings.includedCardcastPacks = includedCardcastPacks;
 		newGame.settings.password = password;
 		newGame.settings.roundsToWin = requiredRounds;
+		newGame.settings.inviteLink = inviteLink;
 		const newHands = await CardManager.dealWhiteCards(newGame);
 		newGame = CardManager.nextBlackCard(newGame);
+		newGame = CardManager.dealWhiteCards(newGame);
 
-		Object.keys(newGame.players).forEach(playerGuid =>
+		await this.updateGame(newGame);
+
+		return newGame;
+	}
+
+
+	public async restartGame(
+		gameId: string,
+		playerGuid: string
+	)
+	{
+		const existingGame = await this.getGame(gameId);
+		const newGame = {...existingGame};
+
+		if (existingGame.ownerGuid !== playerGuid)
 		{
-			newGame.players[playerGuid].whiteCards = newHands[playerGuid];
+			throw new Error("User cannot start game");
+		}
+
+		Object.keys(newGame.players).forEach(pg => {
+			newGame.players[pg].whiteCards = [];
+			newGame.players[pg].wins = 0;
 		});
+
+		newGame.roundIndex = 0;
+		newGame.usedBlackCards = [];
+		newGame.usedWhiteCards = [];
+		newGame.revealIndex = 0;
+		newGame.roundCards = {};
+		newGame.roundStarted = false;
+		newGame.started = false;
+		newGame.blackCard = -1;
+		newGame.lastWinner = undefined;
 
 		await this.updateGame(newGame);
 

@@ -8,12 +8,19 @@ import {RegisterGameEndpoints} from "./Games/GameEndpoints";
 import {Config} from "./config/config";
 import {CardManager} from "./Games/CardManager";
 import {CreateGameManager} from "./Games/GameManager";
+import * as Sentry from "@sentry/node";
 
 // Create the app
 const app = express();
 const port = Config.Port || 5000;
 const clientFolder = path.join(process.cwd(), 'client');
 
+app.use(Sentry.Handlers.requestHandler() as any);
+
+if(Config.Environment !=="local")
+{
+	Sentry.init({dsn: 'https://055714bf94b544a79ce023c1bc076ac5@o377988.ingest.sentry.io/5200777'});
+}
 
 // Set up basic settings
 app.use(express.static(clientFolder, {
@@ -36,6 +43,8 @@ app.get("/service-worker.js", (req, res) =>
 
 CardManager.initialize();
 RegisterGameEndpoints(app, clientFolder);
+
+app.use(Sentry.Handlers.errorHandler() as any);
 
 // Start the server
 const server = app.listen(port, () => console.log(`Listening on port ${port}`));

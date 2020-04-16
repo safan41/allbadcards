@@ -1,19 +1,20 @@
 import * as React from "react";
 import {GameDataStore, IGameDataStorePayload} from "../../Global/DataStore/GameDataStore";
 import {IUserData, UserDataStore} from "../../Global/DataStore/UserDataStore";
-import {WhiteCard} from "../../UI/WhiteCard";
 import Grid from "@material-ui/core/Grid";
 import {BlackCard} from "../../UI/BlackCard";
 import Divider from "@material-ui/core/Divider";
 import {Typography} from "@material-ui/core";
 import {RevealWhites} from "./Components/RevealWhites";
 import {ShowWinner} from "./Components/ShowWinner";
-import Button from "@material-ui/core/Button";
 import {Confirmation} from "./Components/Confirmation";
 import {WhiteCardHand} from "./Components/WhiteCardHand";
 import Tooltip from "@material-ui/core/Tooltip";
-import LinearProgress from "@material-ui/core/LinearProgress";
 import {PickWinner} from "./Components/PickWinner";
+import Chip from "@material-ui/core/Chip";
+import {AiFillCrown} from "react-icons/all";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import {LoadingButton} from "../../UI/LoadingButton";
 
 interface IGamePlayWhiteProps
 {
@@ -33,6 +34,8 @@ interface IGamePlayWhiteState
 	didForfeit: boolean;
 	pickedCards: number[];
 	canUseMyCardsSuck: boolean;
+	suckButtonLoading: boolean,
+	playButtonLoading: boolean,
 }
 
 export class GamePlayWhite extends React.Component<Props, State>
@@ -44,6 +47,8 @@ export class GamePlayWhite extends React.Component<Props, State>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
+			suckButtonLoading: false,
+			playButtonLoading: false,
 			pickedCards: [],
 			didForfeit: false,
 			canUseMyCardsSuck: this.determineCanUseMyCardsSuck(GameDataStore.state.game?.roundIndex ?? 0, GameDataStore.state.game?.id)
@@ -102,7 +107,14 @@ export class GamePlayWhite extends React.Component<Props, State>
 			return;
 		}
 
-		GameDataStore.playWhiteCards(this.state.pickedCards, this.state.userData.playerGuid);
+		this.setState({
+			playButtonLoading: true
+		});
+
+		GameDataStore.playWhiteCards(this.state.pickedCards, this.state.userData.playerGuid)
+			.finally(() => this.setState({
+				playButtonLoading: false
+			}));
 	};
 
 	private onPickUpdate = (pickedCards: number[]) =>
@@ -125,7 +137,8 @@ export class GamePlayWhite extends React.Component<Props, State>
 		if (didConfirm)
 		{
 			this.setState({
-				didForfeit: true
+				didForfeit: true,
+				suckButtonLoading: true
 			});
 
 			const gameId = this.state.gameData.game?.id;
@@ -136,7 +149,10 @@ export class GamePlayWhite extends React.Component<Props, State>
 			}
 
 			let targetPicked = this.state.gameData.blackCardDef?.pick ?? 1;
-			GameDataStore.forfeit(this.state.userData.playerGuid, targetPicked);
+			GameDataStore.forfeit(this.state.userData.playerGuid, targetPicked)
+				.finally(() => this.setState({
+					suckButtonLoading: false
+				}));
 		}
 	};
 
@@ -146,7 +162,10 @@ export class GamePlayWhite extends React.Component<Props, State>
 			userData,
 			gameData,
 			canUseMyCardsSuck,
-			didForfeit
+			didForfeit,
+			pickedCards,
+			playButtonLoading,
+			suckButtonLoading
 		} = this.state;
 
 		if (!gameData.game)
@@ -167,36 +186,36 @@ export class GamePlayWhite extends React.Component<Props, State>
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
 		const chooser = players?.[chooserGuid!]?.nickname;
 
-		const waitingLabel = remainingPlayers.length === 0
-			? `Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`
-			: `Picking: ${remainingPlayers.join(", ")}`;
-
 		const hasPlayed = userData.playerGuid in roundCards;
-
 		const hasWinner = !!gameData.game?.lastWinner;
 
 		let targetPicked = gameData.blackCardDef?.pick ?? 1;
 
 		const roundCardKeys = Object.keys(roundCards ?? {});
 		const revealedIndex = this.state.gameData.game?.revealIndex ?? 0;
-		const metPickTarget = targetPicked <= this.state.pickedCards.length;
+		const metPickTarget = targetPicked <= pickedCards.length;
 		const timeToPick = remainingPlayers.length === 0;
 		const revealMode = timeToPick && revealedIndex < roundCardKeys.length;
 
 		return (
 			<div style={{paddingBottom: "4rem"}}>
-				<div>
-					<Typography>
-						Card Czar: <strong>{chooser}</strong>
+				<Chip
+					color={"primary"}
+					icon={<AiFillCrown/>}
+					label={chooser}
+				/>
+				{roundStarted && remainingPlayers.map(player => (
+					<Chip
+						style={{marginLeft: 3, marginBottom: 3}}
+						avatar={<CircularProgress size={10}/>}
+						label={player}
+					/>
+				))}
+				{!hasWinner && remainingPlayers.length === 0 && (
+					<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
+						{`Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`}
 					</Typography>
-					{!hasWinner && (
-						<div style={{marginBottom: "1rem"}}>
-							<Typography variant={"h5"}>
-								{waitingLabel}
-							</Typography>
-						</div>
-					)}
-				</div>
+				)}
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
 					{roundStarted &&
@@ -226,7 +245,8 @@ export class GamePlayWhite extends React.Component<Props, State>
 							<Grid item xs={12} style={{display: "flex", justifyContent: "center", padding: "4rem 0 2rem"}}>
 								<Tooltip enterTouchDelay={0} enterDelay={0} title={canUseMyCardsSuck ? "Forfeit round and get new cards?" : "You can only do this every 5 rounds"} arrow>
 									<div>
-										<Button
+										<LoadingButton
+											loading={suckButtonLoading}
 											size={"large"}
 											variant={"contained"}
 											color={"primary"}
@@ -237,7 +257,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 											}}
 										>
 											My cards suck
-										</Button>
+										</LoadingButton>
 									</div>
 								</Tooltip>
 							</Grid>
@@ -254,14 +274,15 @@ export class GamePlayWhite extends React.Component<Props, State>
 
 				{!hasPlayed && !didForfeit && !revealMode && metPickTarget && (
 					<Confirmation>
-						<Button
+						<LoadingButton
+							loading={playButtonLoading}
 							size={"large"}
 							variant={"contained"}
 							color={"primary"}
 							onClick={this.onCommit}
 						>
 							Play
-						</Button>
+						</LoadingButton>
 					</Confirmation>
 				)}
 			</div>

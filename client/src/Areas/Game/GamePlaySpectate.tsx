@@ -10,6 +10,9 @@ import {RevealWhites} from "./Components/RevealWhites";
 import {ShowWinner} from "./Components/ShowWinner";
 import Button from "@material-ui/core/Button";
 import {PickWinner} from "./Components/PickWinner";
+import Chip from "@material-ui/core/Chip";
+import {AiFillCrown} from "react-icons/all";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 interface IGamePlaySpectateProps
 {
@@ -96,24 +99,27 @@ export class GamePlaySpectate extends React.Component<Props, State>
 		const timeToPick = remainingPlayers.length === 0;
 		const revealMode = timeToPick && revealedIndex < roundCardKeys.length;
 
-		const waitingLabel = remainingPlayers.length === 0
-			? `Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`
-			: `Picking: ${remainingPlayers.join(", ")}`;
-
 		const hasWinner = !!gameData.game?.lastWinner;
 
 		return (
 			<>
 				<div>
-					<Typography>
-						Card Czar: <strong>{chooser}</strong>
-					</Typography>
-					{!hasWinner && (
-						<div>
-							<Typography variant={"h5"}>
-								{waitingLabel}
-							</Typography>
-						</div>
+					<Chip
+						color={"primary"}
+						icon={<AiFillCrown/>}
+						label={chooser}
+					/>
+					{roundStarted && remainingPlayers.map(player => (
+						<Chip
+							style={{marginLeft: 3, marginBottom: 3}}
+							avatar={<CircularProgress size={10}/>}
+							label={player}
+						/>
+					))}
+					{!hasWinner && remainingPlayers.length === 0 && (
+						<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
+							{`Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`}
+						</Typography>
 					)}
 				</div>
 				<Divider style={{margin: "1rem 0"}}/>

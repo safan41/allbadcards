@@ -18,6 +18,7 @@ export interface IGameDataStorePayload
 	playerCardDefs: WhiteCardMap;
 	roundsRequired: number;
 	password: string | null;
+	inviteLink: string | null;
 	blackCardDef: IBlackCard | null;
 }
 
@@ -26,7 +27,7 @@ let connectionOpen = false;
 
 class _GameDataStore extends DataStore<IGameDataStorePayload>
 {
-	public static Instance = new _GameDataStore({
+	private static InitialState: IGameDataStorePayload = {
 		loaded: false,
 		familyMode: location.hostname.startsWith("not."),
 		game: null,
@@ -37,8 +38,11 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		includedCardcastPacks: [],
 		roundsRequired: 8,
 		password: null,
-		blackCardDef: null
-	});
+		blackCardDef: null,
+		inviteLink: null
+	};
+
+	public static Instance = new _GameDataStore(_GameDataStore.InitialState);
 
 	private ws: WebSocket | null = null;
 
@@ -63,12 +67,28 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			connectionOpen = true;
 			console.log(e);
 			this.ws?.send(JSON.stringify(UserDataStore.state));
+
+			Platform.getPacks()
+				.then(data =>
+				{
+					const defaultPacks = this.state.familyMode
+						? [data[1].packId]
+						: data.slice(0, 20).map(p => p.packId);
+
+					this.update({
+						packs: data,
+						includedPacks: defaultPacks
+					})
+				});
 		};
 
 		this.ws.onmessage = (e) =>
 		{
-			const data = JSON.parse(e.data);
-			this.update(data);
+			const data = JSON.parse(e.data) as {game: GameItem};
+			if(!this.state.game?.id || data.game.id === this.state.game?.id)
+			{
+				this.update(data);
+			}
 		};
 
 		this.ws.onclose = () =>
@@ -79,19 +99,12 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 				this.retry();
 			}
 		};
+	}
 
-		Platform.getPacks()
-			.then(data =>
-			{
-				const defaultPacks = this.state.familyMode
-					? [data[1].packId]
-					: data.slice(0, 20).map(p => p.packId);
-
-				this.update({
-					packs: data,
-					includedPacks: defaultPacks
-				})
-			});
+	public clear()
+	{
+		this.ws?.close();
+		this.update(_GameDataStore.InitialState);
 	}
 
 	private retry(count = 0)
@@ -177,7 +190,13 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	private loadBlackCard()
 	{
-		return Platform.getBlackCard(this.state.game?.blackCard!)
+		const blackCard = this.state.game?.blackCard;
+		if(blackCard === undefined || blackCard === -1)
+		{
+			return Promise.resolve();
+		}
+
+		return Platform.getBlackCard(blackCard)
 			.then(blackCardDef => this.update({
 				blackCardDef
 			}));
@@ -294,6 +313,32 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		});
 	}
 
+	public setInviteLink(url: string)
+	{
+		this.update({
+			inviteLink: url
+		});
+	}
+
+	public restart(playerGuid: string)
+	{
+		this.update({
+			loaded: false
+		});
+
+		const game = this.state.game;
+		if (!game)
+		{
+			throw new Error("Invalid card or game!");
+		}
+
+		return Platform.restart(game.id, playerGuid).then(() => {
+			this.update({
+				loaded: true
+			});
+		});
+	}
+
 	public forfeit(playerGuid: string, cardsNeeded: number)
 	{
 		const game = this.state.game;
@@ -314,7 +359,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			}
 		}
 
-		this.playWhiteCards(toPlay, playerGuid)
+		return this.playWhiteCards(toPlay, playerGuid)
 			.then(() =>
 			{
 				Platform.forfeit(game.id, playerGuid, toPlay);

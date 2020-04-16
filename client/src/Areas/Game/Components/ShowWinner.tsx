@@ -3,17 +3,17 @@ import {GameDataStore, IGameDataStorePayload} from "../../../Global/DataStore/Ga
 import {IUserData, UserDataStore} from "../../../Global/DataStore/UserDataStore";
 import {Typography} from "@material-ui/core";
 import Divider from "@material-ui/core/Divider";
-import Button from "@material-ui/core/Button";
 import {Platform} from "../../../Global/Platform/platform";
 import {WhiteCard} from "../../../UI/WhiteCard";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import sanitize from "sanitize-html";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import {LoadingButton} from "../../../UI/LoadingButton";
 
 interface IShowWinnerProps
 {
@@ -30,6 +30,8 @@ interface IShowWinnerState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
+	remaining: number;
+	roundStartLoading: boolean;
 }
 
 export class ShowWinner extends React.Component<Props, State>
@@ -41,6 +43,8 @@ export class ShowWinner extends React.Component<Props, State>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
+			remaining: 100,
+			roundStartLoading: false
 		};
 	}
 
@@ -53,14 +57,39 @@ export class ShowWinner extends React.Component<Props, State>
 		UserDataStore.listen(data => this.setState({
 			userData: data
 		}));
+
+		const startTime = Date.now();
+		const animate = () =>
+		{
+			const now = Date.now();
+			const diff = now - startTime;
+			const remaining = (1 - Math.min(1, diff / 3000)) * 100;
+			this.setState({
+				remaining: Math.floor(remaining)
+			});
+
+			if (remaining > 0)
+			{
+				requestAnimationFrame(animate);
+			}
+		};
+
+		animate();
 	}
 
-	private onClick = () =>
+	private roundStartClick = () =>
 	{
 		if (this.state.gameData.game?.id)
 		{
+			this.setState({
+				roundStartLoading: true
+			});
+
 			Platform.nextRound(this.state.gameData.game.id, this.state.userData.playerGuid)
-				.catch(e => console.error(e));
+				.catch(e => console.error(e))
+				.finally(() => this.setState({
+					roundStartLoading: false
+				}));
 		}
 	};
 
@@ -89,7 +118,7 @@ export class ShowWinner extends React.Component<Props, State>
 					<WhiteCard style={{marginBottom: "0.5rem"}}>
 						{winnerCards.map(card => card && (
 							<>
-								<div dangerouslySetInnerHTML={{__html: sanitize(card)}} />
+								<div dangerouslySetInnerHTML={{__html: sanitize(card)}}/>
 								<Divider/>
 							</>
 						))}
@@ -98,9 +127,23 @@ export class ShowWinner extends React.Component<Props, State>
 				<Grid item xs={12} sm={12}>
 					{isChooser && (
 						<div style={{marginBottom: "2rem", textAlign: "center"}}>
-							<Button size={"large"} color={"primary"} variant={"contained"} onClick={this.onClick}>
+							<LoadingButton
+								loading={this.state.roundStartLoading}
+								startIcon={
+									this.state.remaining > 0 && <CircularProgress
+										variant={"determinate"}
+										value={this.state.remaining}
+										size={20}
+									/>
+								}
+								size={"large"}
+								color={"primary"}
+								variant={"contained"}
+								onClick={this.roundStartClick}
+								disabled={this.state.remaining > 0}
+							>
 								Start Next round
-							</Button>
+							</LoadingButton>
 						</div>
 					)}
 					<Divider style={{margin: "1rem 0"}}/>

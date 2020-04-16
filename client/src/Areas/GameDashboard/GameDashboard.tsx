@@ -11,7 +11,9 @@ import Paper from "@material-ui/core/Paper";
 import Typography from "@material-ui/core/Typography";
 import {SponsorList} from "./SponsorList";
 import {GameDataStore} from "../../Global/DataStore/GameDataStore";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
+import {Divider, Grid} from "@material-ui/core";
+import {TwitterTimelineEmbed} from "react-twitter-embed";
+import {LoadingButton} from "../../UI/LoadingButton";
 
 interface IGameDashboardProps extends RouteComponentProps
 {
@@ -28,6 +30,7 @@ interface ICreationState
 {
 	userData: IUserData;
 	nicknameDialogOpen: boolean;
+	createLoading: boolean;
 }
 
 export const gamesOwnedLsKey = "games-owned";
@@ -40,7 +43,8 @@ class GameDashboard extends React.Component<Props, State>
 
 		this.state = {
 			userData: UserDataStore.state,
-			nicknameDialogOpen: false
+			nicknameDialogOpen: false,
+			createLoading: false
 		};
 	}
 
@@ -54,6 +58,7 @@ class GameDashboard extends React.Component<Props, State>
 	private createGame = async () =>
 	{
 		this.setState({
+			createLoading: true,
 			nicknameDialogOpen: true
 		});
 	};
@@ -61,13 +66,18 @@ class GameDashboard extends React.Component<Props, State>
 	private onNicknameClose = () =>
 	{
 		this.setState({
+			createLoading: false,
 			nicknameDialogOpen: false
 		});
 	};
 
 	private onNicknameConfirm = async (nickname: string) =>
 	{
+		GameDataStore.clear();
 		const game = await Platform.createGame(this.state.userData.playerGuid, nickname);
+		this.setState({
+			createLoading: false
+		});
 		this.storeOwnedGames(game);
 		this.props.history.push(`/game/${game.id}`)
 	};
@@ -101,7 +111,8 @@ class GameDashboard extends React.Component<Props, State>
 					</ButtonGroup>
 				)}
 				<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "2rem"}}>
-					<Button
+					<LoadingButton
+						loading={this.state.createLoading}
 						variant="contained"
 						color="primary"
 						size="large"
@@ -112,24 +123,8 @@ class GameDashboard extends React.Component<Props, State>
 						startIcon={<FaPlus/>}
 					>
 						New Game
-					</Button>
+					</LoadingButton>
 				</ButtonGroup>
-				<Paper style={{padding: "1rem", margin: "3rem 0 1rem", textAlign: "left"}}>
-					<Typography>
-						<strong>Updates - 4/13</strong>
-						<li>
-							<a href={"https://not.allbad.cards"}>Family Edition!</a> At a separate domain so kids don't try to play with the other cards.
-						</li>
-						<li>Bug fixes</li>
-						<br/>
-						<strong>Updates - 4/12</strong>
-						<li>Card pack selection!</li>
-						<li>Card Czar can skip black cards if they want.</li>
-						<li>Added spectating</li>
-						<li>Improved UI for picking a winner</li>
-						<li>Many bug fixes</li>
-					</Typography>
-				</Paper>
 				<NicknameDialog
 					open={this.state.nicknameDialogOpen}
 					onClose={this.onNicknameClose}
@@ -139,9 +134,45 @@ class GameDashboard extends React.Component<Props, State>
 				<div>
 					<SponsorList/>
 				</div>
+
+				<Paper style={{padding: "1rem", margin: "3rem 0 1rem", textAlign: "left"}}>
+					<Grid container>
+						<Grid item xs={7}>
+							<Typography>
+								<strong>Updates - 4/14</strong>
+                                <li>Added option to specify an invite link for chat or video room</li>
+								<li>Improved UI for picking players</li>
+								<li>Added option to start game over when you're finished</li>
+								<li>Repeat cards no longer show</li>
+								<li>Fixed round count slider</li>
+								<li>Viewing roster no longer breaks the game</li>
+								<li>Added option to specify an invite link for chat or video room</li>
+								<li>Added Twitter feed to homepage</li>
+								<br/>
+								<strong>Updates - 4/13</strong>
+								<li>
+									<a href={"https://not.allbad.cards"}>Family Edition!</a> At a separate domain so kids don't try to play with the other cards.
+								</li>
+								<li>Bug fixes</li>
+							</Typography>
+						</Grid>
+						<Grid item xs={1} style={{display: "flex", justifyContent: "center"}}>
+							<Divider orientation={"vertical"}/>
+						</Grid>
+						<Grid item xs={4}>
+							<TwitterTimelineEmbed
+								sourceType="profile"
+								screenName="allbadcards"
+								options={{
+									height: 400
+								}}
+							/>
+						</Grid>
+					</Grid>
+				</Paper>
 				<Paper style={{padding: "1rem", marginTop: "3rem"}} elevation={5}>
 					<Typography variant={"caption"}>
-						Cards Against Humanity by Cards Against Humanity LLC is licensed under CC BY-NC-SA 2.0.
+						Cards Against Humanity by <a href={"https://cardsagainsthumanity.com"}>Cards Against Humanity</a> LLC is licensed under CC BY-NC-SA 2.0.
 					</Typography>
 				</Paper>
 			</Container>

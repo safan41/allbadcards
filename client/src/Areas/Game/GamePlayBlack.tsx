@@ -10,6 +10,10 @@ import {RevealWhites} from "./Components/RevealWhites";
 import {ShowWinner} from "./Components/ShowWinner";
 import Button from "@material-ui/core/Button";
 import {PickWinner} from "./Components/PickWinner";
+import Chip from "@material-ui/core/Chip";
+import {AiFillCrown} from "react-icons/all";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import {LoadingButton} from "../../UI/LoadingButton";
 
 interface IGamePlayBlackProps
 {
@@ -26,6 +30,7 @@ interface IGamePlayBlackState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
+	buttonLoading: boolean;
 }
 
 export class GamePlayBlack extends React.Component<Props, State>
@@ -37,6 +42,7 @@ export class GamePlayBlack extends React.Component<Props, State>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
+			buttonLoading: false
 		};
 	}
 
@@ -53,23 +59,38 @@ export class GamePlayBlack extends React.Component<Props, State>
 
 	private onSelect = (winningPlayerGuid: string) =>
 	{
-		GameDataStore.chooseWinner(this.state.userData.playerGuid, winningPlayerGuid);
+		return GameDataStore.chooseWinner(this.state.userData.playerGuid, winningPlayerGuid);
 	};
 
 	private onClickStartRound = () =>
 	{
-		GameDataStore.startRound(this.state.userData.playerGuid);
+		this.setState({
+			buttonLoading: true
+		});
+
+		GameDataStore.startRound(this.state.userData.playerGuid)
+			.finally(() => this.setState({
+				buttonLoading: false
+			}));
 	};
 
 	private onClickSkipBlack = () =>
 	{
-		GameDataStore.skipBlack(this.state.userData.playerGuid);
+		this.setState({
+			buttonLoading: true
+		});
+
+		GameDataStore.skipBlack(this.state.userData.playerGuid)
+			.finally(() => this.setState({
+				buttonLoading: false
+			}));
 	};
 
 	public render()
 	{
 		const {
 			gameData,
+			buttonLoading
 		} = this.state;
 
 		const me = gameData.game?.players?.[this.state.userData.playerGuid];
@@ -106,22 +127,29 @@ export class GamePlayBlack extends React.Component<Props, State>
 			? "Pick the winner"
 			: timeToPick
 				? `Reveal each white card...`
-				: `Picking: ${remainingPlayers.join(", ")}`;
+				: ``;
 
 		const hasWinner = !!gameData.game?.lastWinner;
 
 		return (
 			<>
 				<div>
-					<Typography>
-						Card Czar: <strong>You!</strong>
-					</Typography>
+					<Chip
+						color={"primary"}
+						icon={<AiFillCrown/>}
+						label={"You!"}
+					/>
+					{roundStarted && remainingPlayers.map(player => (
+						<Chip
+							style={{marginLeft: 3, marginBottom: 3}}
+							avatar={<CircularProgress size={10}/>}
+							label={player}
+						/>
+					))}
 					{!hasWinner && (
-						<div>
-							<Typography variant={"h5"}>
-								{waitingLabel}
-							</Typography>
-						</div>
+						<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
+							{waitingLabel}
+						</Typography>
 					)}
 				</div>
 				<Divider style={{margin: "1rem 0"}}/>
@@ -139,12 +167,12 @@ export class GamePlayBlack extends React.Component<Props, State>
 				</Grid>
 				{!roundStarted && (
 					<div style={{marginTop: "1rem", textAlign: "center"}}>
-						<Button color={"primary"} variant={"contained"} onClick={this.onClickSkipBlack}>
+						<LoadingButton loading={buttonLoading} color={"primary"} variant={"contained"} onClick={this.onClickSkipBlack}>
 							Skip Card
-						</Button>
-						<Button color={"primary"} variant={"contained"} onClick={this.onClickStartRound} style={{marginLeft: "1rem"}}>
+						</LoadingButton>
+						<LoadingButton loading={buttonLoading} color={"primary"} variant={"contained"} onClick={this.onClickStartRound} style={{marginLeft: "1rem"}}>
 							Start the round!
-						</Button>
+						</LoadingButton>
 					</div>
 				)}
 				<PickWinner

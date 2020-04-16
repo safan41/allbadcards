@@ -55,7 +55,7 @@ export class BlackCard extends React.Component<Props, State>
 		return (
 			<Card
 				style={{
-					minHeight: "33vh",
+					minHeight: "25vh",
 					cursor: "default",
 					backgroundColor: "black",
 				}}
@@ -64,7 +64,7 @@ export class BlackCard extends React.Component<Props, State>
 				onMouseLeave={this.onMouseLeave}
 			>
 				<CardContent>
-					<Typography variant={"h5"} style={{color: "white"}}>
+					<Typography variant={"h6"} style={{color: "white"}}>
 						<span dangerouslySetInnerHTML={{__html: sanitized}} />
 					</Typography>
 				</CardContent>

@@ -6,6 +6,7 @@ import Button from "@material-ui/core/Button";
 import {GameDataStore, IGameDataStorePayload} from "../../../Global/DataStore/GameDataStore";
 import {IUserData, UserDataStore} from "../../../Global/DataStore/UserDataStore";
 import sanitize from "sanitize-html";
+import {LoadingButton} from "../../../UI/LoadingButton";
 
 interface IRevealWhitesProps
 {
@@ -23,6 +24,7 @@ interface IRevealWhitesState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
+	revealLoading: boolean;
 }
 
 export class RevealWhites extends React.Component <Props, State>
@@ -34,6 +36,7 @@ export class RevealWhites extends React.Component <Props, State>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
+			revealLoading: false
 		};
 	}
 
@@ -50,13 +53,21 @@ export class RevealWhites extends React.Component <Props, State>
 
 	private onReveal = () =>
 	{
-		GameDataStore.revealNext(this.state.userData.playerGuid);
+		this.setState({
+			revealLoading: true
+		});
+
+		GameDataStore.revealNext(this.state.userData.playerGuid)
+			.finally(() => this.setState({
+				revealLoading: false
+			}));
 	};
 
 	public render()
 	{
 		const {
 			gameData,
+			revealLoading
 		} = this.state;
 
 		const whiteCards = Object.values(gameData.roundCardDefs);
@@ -93,15 +104,17 @@ export class RevealWhites extends React.Component <Props, State>
 								</>
 							))}
 							{this.props.canReveal && (
-								<Button color={"primary"} variant={"contained"} onClick={this.onReveal}>
+								<LoadingButton loading={revealLoading} color={"primary"} variant={"contained"} onClick={this.onReveal}>
 									{label}
-								</Button>
+								</LoadingButton>
 							)}
 						</WhiteCard>
 					</>
 				)}
 				{realRevealIndex === -1 && this.props.canReveal && (
-					<Button color={"primary"} variant={"contained"} onClick={this.onReveal}>Show me the cards!</Button>
+					<LoadingButton loading={revealLoading} color={"primary"} variant={"contained"} onClick={this.onReveal}>
+						Show me the cards!
+					</LoadingButton>
 				)}
 			</Grid>
 		);
