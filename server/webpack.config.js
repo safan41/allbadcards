@@ -13,7 +13,7 @@ const portEnvMap = {
     beta: 9500
 };
 
-module.exports = (serverEnv) => ({
+module.exports = (serverEnv, outputDir) => ({
     entry: entryPath,
     target: "node",
     mode: "production",
@@ -35,7 +35,7 @@ module.exports = (serverEnv) => ({
     },
     output: {
         filename: 'server.js',
-        path: path.resolve(appDirectory, "output/server")
+        path: path.resolve(outputDir, "server")
     },
     plugins: [
         new FriendlyErrorsWebpackPlugin(),
