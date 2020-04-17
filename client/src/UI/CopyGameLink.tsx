@@ -48,9 +48,10 @@ export const CopyGameLink: React.FC<ICopyGameLinkProps> = (props) =>
 		return null;
 	}
 
-	const shareLabel = copied ? "Copied!" : "Copy to Clipboard";
+	const shareLabel = copied ? "Copied!" : "Copy";
 
-	const link = `${location.protocol}//${location.host}/game/${gameData.game?.id}`;
+	const link = `${location.host}/game/${gameData.game?.id}`;
+	const fullLink = `${location.protocol}//${link}`;
 
 	return (
 		<>
@@ -65,11 +66,11 @@ export const CopyGameLink: React.FC<ICopyGameLinkProps> = (props) =>
 				{
 				}}
 				deleteIcon={
-					<CopyToClipboard text={link} onCopy={onCopy}>
+					<CopyToClipboard text={fullLink} onCopy={onCopy}>
 						<Chip
 							color={"primary"}
 							label={shareLabel}
-							style={{width: 150, color: "white"}}
+							style={{width: 75, color: "white"}}
 						/>
 					</CopyToClipboard>
 				}

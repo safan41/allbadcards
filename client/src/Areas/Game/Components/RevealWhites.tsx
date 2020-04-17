@@ -69,17 +69,23 @@ export class RevealWhites extends React.Component <Props, State>
 			gameData,
 			revealLoading
 		} = this.state;
+		
+		if(!gameData.game)
+		{
+			return null;
+		}
 
-		const whiteCards = Object.values(gameData.roundCardDefs);
-		const roundCardKeys = Object.keys(gameData.game?.roundCards ?? {});
 		const game = gameData.game;
-		const roundPlayers = Object.keys(game?.roundCards ?? {});
-		const remainingPlayerGuids = Object.keys(game?.players ?? {})
-			.filter(pg => !(pg in (game?.roundCards ?? {})) && pg !== game?.chooserGuid);
-		const remainingPlayers = remainingPlayerGuids.map(pg => game?.players?.[pg]?.nickname);
-		const realRevealIndex = game?.revealIndex ?? 0;
-		const revealedIndex = (realRevealIndex + (game?.randomOffset ?? 0)) % roundPlayers.length;
-		const cardsIdsRevealed = game?.roundCards[roundPlayers[revealedIndex]] ?? [];
+		const playerOrder = game.playerOrder ?? Object.keys(game.players);
+		const roundCardKeys = Object.keys(game.roundCards ?? {});
+		const roundPlayers = Object.keys(game.roundCards ?? {});
+		const remainingPlayerGuids = Object.keys(game.players ?? {})
+			.filter(pg => !(pg in (game.roundCards ?? {})) && pg !== game.chooserGuid);
+		const remainingPlayers = remainingPlayerGuids.map(pg => game.players?.[pg]?.nickname);
+		const realRevealIndex = game.revealIndex ?? 0;
+		const revealedIndex = realRevealIndex % roundPlayers.length;
+		const playerGuidAtIndex = playerOrder[isNaN(revealedIndex) ? 0 : revealedIndex];
+		const cardsIdsRevealed = game.roundCards[playerGuidAtIndex] ?? [];
 		const cardsRevealed = cardsIdsRevealed.map(cid => gameData.roundCardDefs[cid]);
 		const timeToPick = remainingPlayers.length === 0;
 		const revealMode = timeToPick && realRevealIndex < roundCardKeys.length;

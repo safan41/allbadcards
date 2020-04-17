@@ -5,6 +5,7 @@ import WebSocket from "ws";
 import {GameMessage} from "../SocketMessages/GameMessage";
 import * as http from "http";
 import {Config} from "../config/config";
+import {ArrayUtils} from "../Utils/ArrayUtils";
 
 type PlayerMap = { [key: string]: GamePlayer };
 
@@ -37,6 +38,7 @@ export interface GameItem
 	blackCard: number;
 	// key = player guid, value = white card ID
 	roundCards: { [key: string]: number[] };
+	playerOrder: string[];
 	usedBlackCards: number[];
 	usedWhiteCards: number[];
 	revealIndex: number;
@@ -44,7 +46,6 @@ export interface GameItem
 		playerGuid: string;
 		whiteCardIds: number[];
 	} | undefined;
-	randomOffset: number;
 	settings: {
 		password: string | null;
 		roundsToWin: number;
@@ -212,6 +213,7 @@ class _GameManager
 				chooserGuid: null,
 				dateCreated: new Date(),
 				players: {[ownerGuid]: this.createPlayer(ownerGuid, nickname, false)},
+				playerOrder: [],
 				spectators: {},
 				public: false,
 				started: false,
@@ -221,7 +223,6 @@ class _GameManager
 				usedWhiteCards: [],
 				revealIndex: -1,
 				lastWinner: undefined,
-				randomOffset: 0,
 				settings: {
 					roundsToWin,
 					password,
@@ -349,8 +350,6 @@ class _GameManager
 		// Reset the played cards for the round
 		newGame.roundCards = {};
 
-		newGame.randomOffset = Math.floor(Math.random() * playerGuids.length);
-
 		// Deal a new hand
 		newGame = await CardManager.dealWhiteCards(newGame);
 
@@ -389,7 +388,6 @@ class _GameManager
 		newGame.settings.password = password;
 		newGame.settings.roundsToWin = requiredRounds;
 		newGame.settings.inviteLink = inviteLink;
-		const newHands = await CardManager.dealWhiteCards(newGame);
 		newGame = CardManager.nextBlackCard(newGame);
 		newGame = CardManager.dealWhiteCards(newGame);
 
@@ -438,6 +436,7 @@ class _GameManager
 
 		const newGame = {...existingGame};
 		newGame.roundCards[playerGuid] = cardIds;
+		newGame.playerOrder = ArrayUtils.shuffle(Object.keys(newGame.players));
 
 		await this.updateGame(newGame);
 
