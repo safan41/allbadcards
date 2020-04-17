@@ -140,7 +140,9 @@ class GameDashboard extends React.Component<Props, State>
 					<Grid container>
 						<Grid item md={7} xs={12}>
 							<Typography>
-								<strong>Updates - 4/16</strong>
+								<strong>Updates - 4/17</strong>
+								<li>Added option to add a random player (Rando Cardrissian rule)! Can add up to 10 random players.</li>
+								<li>New game URLs are readable now</li>
 								<li>Improved loading states to prevent errors when buttons are clicked multiple times</li>
 								<li>Made card reveal of player order random</li>
 								<li>UI Improvement for stating games</li>

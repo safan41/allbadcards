@@ -292,6 +292,17 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			.catch(e => console.error(e));
 	}
 
+	public addRandomPlayer(userGuid: string)
+	{
+		if (!this.state.game)
+		{
+			throw new Error("Invalid card or game!");
+		}
+
+		return Platform.addRandomPlayer(this.state.game.id, userGuid)
+			.catch(e => console.error(e));
+	}
+
 	public setIncludedPacks(includedPacks: string[])
 	{
 		this.update({

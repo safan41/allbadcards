@@ -34,7 +34,7 @@ export const LoadingButton: React.FC<LoadingButtonProps> = (
 				{
 					setLoading(false);
 					setTimeoutId(null);
-				}, 500)
+				}, 250)
 			);
 		}
 		else

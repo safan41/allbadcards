@@ -64,12 +64,19 @@ export const SponsorList = () =>
 
 	const sponsors: (ISponsor | undefined)[] = [
 		{
+			src: "/sponsors/carepod.png",
+			byline: "🐾 Need a vacay to fly away with our pets 🐶",
+			url: "https://flycarepod.link/games"
+		},
+		{
 			src: "/sponsors/songsaga.png",
 			url: "https://song-saga.com",
 			byline: "The music and story game that rocks 🤘"
 		},
 		undefined,
 		undefined,
+		undefined,
+		undefined
 	];
 
 	return (

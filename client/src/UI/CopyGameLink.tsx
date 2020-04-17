@@ -1,10 +1,10 @@
 import {CopyToClipboard} from "react-copy-to-clipboard";
-import Button from "@material-ui/core/Button";
 import React, {useEffect, useState} from "react";
 import {GameDataStore} from "../Global/DataStore/GameDataStore";
 import {Typography} from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import Chip from "@material-ui/core/Chip";
+import {Twemoji} from "react-emoji-render";
 
 export interface ICopyGameLinkProps
 {
@@ -56,12 +56,16 @@ export const CopyGameLink: React.FC<ICopyGameLinkProps> = (props) =>
 	return (
 		<>
 			<Typography>
-			Send this link to the players in your party:
+				Send this link to the players in your party:
 			</Typography>
 			<br/>
 			<Chip
 				variant={"outlined"}
-				label={<a href={link} className={classes.link}>{link}</a>}
+				label={
+					<a href={link} className={classes.link}>
+						{link}
+					</a>
+				}
 				onDelete={() =>
 				{
 				}}

@@ -1,16 +1,14 @@
 import React, {useEffect, useState} from "react";
-import Button from "@material-ui/core/Button";
-import {makeStyles} from "@material-ui/core/styles";
 import GamePreview from "./GamePreview";
 import {Platform} from "../../Global/Platform/platform";
 import {UserDataStore} from "../../Global/DataStore/UserDataStore";
 import {GameDataStore} from "../../Global/DataStore/GameDataStore";
-import {Container} from "@material-ui/core";
 import Typography from "@material-ui/core/Typography";
 import {GameSettings} from "./Components/GameSettings";
-import {CopyGameLink} from "../../UI/CopyGameLink";
 import Divider from "@material-ui/core/Divider";
 import {LoadingButton} from "../../UI/LoadingButton";
+import {MdAdd} from "react-icons/all";
+import {useDataStore} from "../../Global/Utils/HookUtils";
 
 interface IGameStartProps
 {
@@ -19,13 +17,10 @@ interface IGameStartProps
 
 const GameStart: React.FC<IGameStartProps> = (props) =>
 {
-	const [gameData, setGameData] = useState(GameDataStore.state);
+	const gameData = useDataStore(GameDataStore);
+	const userData = useDataStore(UserDataStore);
 	const [startLoading, setStartLoading] = useState(false);
-
-	useEffect(() =>
-	{
-		GameDataStore.listen(setGameData);
-	}, []);
+	const [randomPlayerLoading, setRandomPlayerLoading] = useState(false);
 
 	const onClickStart = () =>
 	{
@@ -43,15 +38,29 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 			.finally(() => setStartLoading(false));
 	};
 
-	const players = Object.keys(gameData.game?.players ?? {});
-	const canStart = players.length > 1;
+	const onClickAddRandom = () =>
+	{
+		setRandomPlayerLoading(true);
+		GameDataStore.addRandomPlayer(userData.playerGuid)
+			.finally(() => setRandomPlayerLoading(false));
+	};
+
+	const players = gameData.game?.players ?? {};
+	const playerGuids = Object.keys(gameData.game?.players ?? {});
+	const randomPlayers = playerGuids.filter(pg => players[pg]?.isRandom) ?? [];
+	const nonRandomPlayers = playerGuids.filter(pg => !players[pg]?.isRandom) ?? [];
+	const canStart = nonRandomPlayers.length > 1;
+	const canAddRandom = randomPlayers.length < 10;
 
 	return (
 		<GamePreview id={props.id}>
 			<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
 				Start
 			</LoadingButton>
-			<Divider style={{margin: "3rem 0"}} />
+			<LoadingButton startIcon={<MdAdd/>} loading={randomPlayerLoading} variant={"contained"} color={"primary"} onClick={onClickAddRandom} style={{marginLeft: "1rem"}} disabled={!canAddRandom}>
+				Random Player
+			</LoadingButton>
+			<Divider style={{margin: "3rem 0"}}/>
 			<Typography variant={"h4"}>Settings</Typography>
 			<GameSettings/>
 		</GamePreview>

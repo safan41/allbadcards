@@ -18,6 +18,7 @@ export interface GamePlayer
 	wins: number;
 	whiteCards: number[];
 	isSpectating: boolean;
+	isRandom: boolean;
 }
 
 export interface GameItem
@@ -230,6 +231,16 @@ class _Platform
 		_Platform.trackEvent("round-start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/start-round", {
+			gameId,
+			ownerGuid,
+		});
+	}
+
+	public async addRandomPlayer(gameId: string, ownerGuid: string)
+	{
+		_Platform.trackEvent("round-start", gameId);
+
+		return _Platform.doPost<GameItem>("/api/game/add-random-player", {
 			gameId,
 			ownerGuid,
 		});
