@@ -14,6 +14,7 @@ import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 import {Divider, Grid} from "@material-ui/core";
 import {TwitterTimelineEmbed} from "react-twitter-embed";
 import {LoadingButton} from "../../UI/LoadingButton";
+import Hidden from "@material-ui/core/Hidden";
 
 interface IGameDashboardProps extends RouteComponentProps
 {
@@ -137,10 +138,18 @@ class GameDashboard extends React.Component<Props, State>
 
 				<Paper style={{padding: "1rem", margin: "3rem 0 1rem", textAlign: "left"}}>
 					<Grid container>
-						<Grid item xs={7}>
+						<Grid item md={7} xs={12}>
 							<Typography>
+								<strong>Updates - 4/16</strong>
+								<li>Improved loading states to prevent errors when buttons are clicked multiple times</li>
+								<li>Made card reveal of player order random</li>
+								<li>UI Improvement for stating games</li>
+								<li>Fixed update behavior if more than one tab is open</li>
+								<li>Fixed repeated cards (again)</li>
+								<li>Bug fixes</li>
+								<br/>
 								<strong>Updates - 4/14</strong>
-                                <li>Added option to specify an invite link for chat or video room</li>
+								<li>Added option to specify an invite link for chat or video room</li>
 								<li>Improved UI for picking players</li>
 								<li>Added option to start game over when you're finished</li>
 								<li>Repeat cards no longer show</li>
@@ -148,18 +157,12 @@ class GameDashboard extends React.Component<Props, State>
 								<li>Viewing roster no longer breaks the game</li>
 								<li>Added option to specify an invite link for chat or video room</li>
 								<li>Added Twitter feed to homepage</li>
-								<br/>
-								<strong>Updates - 4/13</strong>
-								<li>
-									<a href={"https://not.allbad.cards"}>Family Edition!</a> At a separate domain so kids don't try to play with the other cards.
-								</li>
-								<li>Bug fixes</li>
 							</Typography>
 						</Grid>
-						<Grid item xs={1} style={{display: "flex", justifyContent: "center"}}>
+						<Grid item md={1} xs={12} style={{display: "flex", justifyContent: "center", margin: "2rem 0"}}>
 							<Divider orientation={"vertical"}/>
 						</Grid>
-						<Grid item xs={4}>
+						<Grid item md={4} xs={12}>
 							<TwitterTimelineEmbed
 								sourceType="profile"
 								screenName="allbadcards"

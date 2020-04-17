@@ -78,7 +78,7 @@ export const GameRoster = () =>
                                     </>}
 								</ListItemText>
 
-								{isOwner || isSelf && (
+								{(isOwner || isSelf) && (
 									<ListItemSecondaryAction>
 										<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
 											<AiOutlineUserDelete/>

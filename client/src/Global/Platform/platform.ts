@@ -35,6 +35,7 @@ export interface GameItem
 	blackCard: number;
 	// key = player guid, value = white card ID
 	roundCards: { [key: string]: number[] };
+	playerOrder: string[];
 	usedBlackCards: number[];
 	usedWhiteCards: number[];
 	revealIndex: number;
@@ -42,11 +43,10 @@ export interface GameItem
 		playerGuid: string;
 		whiteCardIds: number[];
 	} | undefined;
-	randomOffset: number;
 	settings: {
-		inviteLink: string | null;
 		password: string | null;
 		roundsToWin: number;
+		inviteLink: string | null;
 		includedPacks: string[];
 		includedCardcastPacks: string[];
 	}

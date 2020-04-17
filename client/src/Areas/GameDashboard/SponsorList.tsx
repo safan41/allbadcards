@@ -23,6 +23,7 @@ const useStyles = makeStyles({
 		padding: "1rem",
 		"& a": {
 			display: "flex",
+			flexDirection: "column",
 			alignItems: "center",
 			justifyContent: "center",
 			width: "100%",
@@ -54,6 +55,7 @@ interface ISponsor
 {
 	url: string;
 	src: string;
+	byline: string;
 }
 
 export const SponsorList = () =>
@@ -61,7 +63,11 @@ export const SponsorList = () =>
 	const classes = useStyles();
 
 	const sponsors: (ISponsor | undefined)[] = [
-		undefined,
+		{
+			src: "/sponsors/songsaga.png",
+			url: "https://song-saga.com",
+			byline: "The music and story game that rocks 🤘"
+		},
 		undefined,
 		undefined,
 	];
@@ -107,16 +113,25 @@ const Sponsor: React.FC<ISponsorProps> = (props) =>
 		[classes.noSponsor]: !props.sponsor,
 	});
 
+	const byline = props.sponsor?.byline ?? "+ Sponsor";
+
 	return (
 		<Grid item xs={12} sm={6} md={4} className={wrapperClasses}>
 			<a href={url} target={"_blank"} rel={"noreferrer nofollow"}>
 				{props.sponsor !== undefined && (
-					<div style={{backgroundImage: props.sponsor.url}}/>
+					<div style={{
+						width: "100%",
+						height: "5rem",
+						backgroundImage: `url(${props.sponsor.src})`,
+						backgroundSize: "contain",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center"
+					}}/>
 				)}
 
-				{!props.sponsor && (
-					<Typography>+ Sponsor</Typography>
-				)}
+				<Typography style={{color: "black", fontSize: "12px"}}>
+					{byline}
+				</Typography>
 			</a>
 		</Grid>
 	);

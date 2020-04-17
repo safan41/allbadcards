@@ -13,8 +13,26 @@ import ExpansionPanelSummary from "@material-ui/core/ExpansionPanelSummary";
 import {ExpandMore} from "@material-ui/icons";
 import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import Divider from "@material-ui/core/Divider";
+import makeStyles from "@material-ui/styles/makeStyles/makeStyles";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
 
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+
+const useStyles = makeStyles({
+	whiteBox: {
+		marginLeft: 20,
+		height: "1rem",
+		border: "1px solid black",
+		padding: 5
+	},
+	blackBox: {
+		padding: 5,
+		height: "1rem",
+		background: "black",
+		border: "1px solid black",
+		color: "white",
+	}
+});
 
 export const GameSettings = () =>
 {
@@ -54,6 +72,10 @@ export const GameSettings = () =>
 		GameDataStore.setIncludedPacks(gameData.packs?.slice(32).map(p => p.packId));
 	};
 
+	const classes = useStyles();
+
+	const mobile = useMediaQuery('(max-width:600px)');
+
 	return (
 		<div>
 			<div style={{marginTop: "1rem"}}>
@@ -79,7 +101,7 @@ export const GameSettings = () =>
 							<FormControl component="fieldset">
 								<Divider style={{marginBottom: "1rem"}}/>
 								<div>
-									<ButtonGroup>
+									<ButtonGroup orientation={mobile ? "vertical" : "horizontal"}>
 										<Button onClick={selectDefault}>Default</Button>
 										<Button onClick={selectAll}>All</Button>
 										<Button onClick={selectNone}>None</Button>
@@ -100,7 +122,13 @@ export const GameSettings = () =>
 													onChange={onPacksChange}
 													name={pack.packId}/>
 											}
-											label={pack.packName}
+											label={
+												<div>
+													<span>{pack.packName}</span>
+													<span className={classes.whiteBox}>{pack.whiteCount}</span>
+													<span className={classes.blackBox}>{pack.blackCount}</span>
+												</div>
+											}
 										/>
 									</FormGroup>
 								))}
