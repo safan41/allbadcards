@@ -2,7 +2,7 @@ import {Express, Response} from "express";
 import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
-import {logError, logMessage} from "../logger";
+import {logMessage} from "../logger";
 
 const cache = apicache.middleware;
 
@@ -10,7 +10,7 @@ const onError = (res: Response, error: Error) =>
 {
 	res.status(500).send({message: error.message, stack: error.stack});
 	throw error;
-}
+};
 
 export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
@@ -101,7 +101,12 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const result = await GameManager.joinGame(req.body.playerGuid, req.body.gameId, req.body.nickname, JSON.parse(req.body.isSpectating ?? "false"));
+			const result = await GameManager.joinGame(
+				req.body.playerGuid,
+				req.body.gameId,
+				req.body.nickname,
+				JSON.parse(req.body.isSpectating ?? "false"),
+				false);
 
 			res.send(result);
 		}
@@ -238,6 +243,21 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		try
 		{
 			const result = await GameManager.startRound(req.body.gameId, req.body.ownerGuid);
+
+			res.send(result);
+		}
+		catch (error)
+		{
+			onError(res, error);
+		}
+	});
+
+	app.post("/api/game/add-random-player", async (req, res, next) =>
+	{
+		logMessage(req.url, req.body);
+		try
+		{
+			const result = await GameManager.addRandomPlayer(req.body.gameId, req.body.ownerGuid);
 
 			res.send(result);
 		}

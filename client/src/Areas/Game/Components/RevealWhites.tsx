@@ -77,14 +77,15 @@ export class RevealWhites extends React.Component <Props, State>
 
 		const game = gameData.game;
 		const playerOrder = game.playerOrder ?? Object.keys(game.players);
+		const roundPlayerOrder = playerOrder.filter(a => a !== game.chooserGuid);
 		const roundCardKeys = Object.keys(game.roundCards ?? {});
 		const roundPlayers = Object.keys(game.roundCards ?? {});
 		const remainingPlayerGuids = Object.keys(game.players ?? {})
 			.filter(pg => !(pg in (game.roundCards ?? {})) && pg !== game.chooserGuid);
 		const remainingPlayers = remainingPlayerGuids.map(pg => game.players?.[pg]?.nickname);
-		const realRevealIndex = game.revealIndex ?? 0;
+		const realRevealIndex = game.revealIndex ?? -1;
 		const revealedIndex = realRevealIndex % roundPlayers.length;
-		const playerGuidAtIndex = playerOrder[isNaN(revealedIndex) ? 0 : revealedIndex];
+		const playerGuidAtIndex = roundPlayerOrder[isNaN(revealedIndex) ? 0 : revealedIndex];
 		const cardsIdsRevealed = game.roundCards[playerGuidAtIndex] ?? [];
 		const cardsRevealed = cardsIdsRevealed.map(cid => gameData.roundCardDefs[cid]);
 		const timeToPick = remainingPlayers.length === 0;

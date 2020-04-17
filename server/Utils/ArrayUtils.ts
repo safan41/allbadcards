@@ -20,5 +20,14 @@ export class ArrayUtils
 		}
 
 		return array;
+	};
+
+	public static getRandomUnused = <T>(from: T[], used: T[]): [T, T[]] =>
+	{
+		const available = from.filter(a => !used.includes(a));
+		const randomIndex = Math.floor(Math.random() * available.length);
+		const newValue = available[randomIndex];
+		const newUsed = [...used, newValue];
+		return [newValue, newUsed];
 	}
 }

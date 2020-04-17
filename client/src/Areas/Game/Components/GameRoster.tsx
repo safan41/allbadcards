@@ -14,6 +14,7 @@ import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import {ContainerProgress} from "../../../UI/ContainerProgress";
+import Tooltip from "@material-ui/core/Tooltip";
 
 const useStyles = makeStyles({
 	iconButton: {
@@ -52,7 +53,7 @@ export const GameRoster = () =>
 	const sortedPlayerGuids = [...playerGuids].sort((a, b) => game.players[b].wins - game.players[a].wins);
 
 	const isOwner = gameData.game?.ownerGuid === userData.playerGuid;
-
+	const playerCount = playerGuids.length;
 	const spectatorCount = Object.keys(game.spectators).length;
 
 	return (
@@ -78,11 +79,13 @@ export const GameRoster = () =>
                                     </>}
 								</ListItemText>
 
-								{(isOwner || isSelf) && (
+								{(isOwner || isSelf) && playerCount > 1 && (
 									<ListItemSecondaryAction>
-										<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
-											<AiOutlineUserDelete/>
-										</Button>
+										<Tooltip title={`Remove this player`} aria-label={`Remove this player`} arrow>
+											<Button size={"large"} className={classes.iconButton} onClick={() => onClickKick(player.guid)}>
+												<AiOutlineUserDelete/>
+											</Button>
+										</Tooltip>
 									</ListItemSecondaryAction>
 								)}
 							</ListItem>

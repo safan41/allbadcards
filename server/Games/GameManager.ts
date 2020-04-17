@@ -1,11 +1,13 @@
 import {Database} from "../DB/Database";
 import shortid from "shortid";
+import {hri} from "human-readable-ids";
 import {CardManager} from "./CardManager";
 import WebSocket from "ws";
 import {GameMessage} from "../SocketMessages/GameMessage";
 import * as http from "http";
 import {Config} from "../config/config";
 import {ArrayUtils} from "../Utils/ArrayUtils";
+import {RandomPlayerNicknames} from "./RandomPlayers";
 
 type PlayerMap = { [key: string]: GamePlayer };
 
@@ -21,6 +23,7 @@ export interface GamePlayer
 	wins: number;
 	whiteCards: number[];
 	isSpectating: boolean;
+	isRandom: boolean;
 }
 
 export interface GameItem
@@ -131,14 +134,15 @@ class _GameManager
 		return Database.db.collection<GameItem>("games");
 	}
 
-	private createPlayer(playerGuid: string, nickname: string, isSpectating: boolean): GamePlayer
+	private createPlayer(playerGuid: string, nickname: string, isSpectating: boolean, isRandom: boolean): GamePlayer
 	{
 		return {
 			guid: playerGuid,
 			whiteCards: [],
 			nickname,
 			wins: 0,
-			isSpectating
+			isSpectating,
+			isRandom
 		};
 	}
 
@@ -201,7 +205,7 @@ class _GameManager
 	{
 		console.log(`Creating game for ${ownerGuid}`);
 
-		const gameId = shortid.generate();
+		const gameId = hri.random();
 
 		try
 		{
@@ -212,7 +216,7 @@ class _GameManager
 				ownerGuid,
 				chooserGuid: null,
 				dateCreated: new Date(),
-				players: {[ownerGuid]: this.createPlayer(ownerGuid, nickname, false)},
+				players: {[ownerGuid]: this.createPlayer(ownerGuid, nickname, false, false)},
 				playerOrder: [],
 				spectators: {},
 				public: false,
@@ -250,7 +254,7 @@ class _GameManager
 		}
 	}
 
-	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating: boolean)
+	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating: boolean, isRandom: boolean)
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -260,9 +264,9 @@ class _GameManager
 		}
 
 		const newGame = {...existingGame};
-		newGame.revealIndex = 0;
+		newGame.revealIndex = -1;
 
-		const newPlayer = this.createPlayer(playerGuid, nickname, isSpectating);
+		const newPlayer = this.createPlayer(playerGuid, nickname, isSpectating, isRandom);
 		if (isSpectating)
 		{
 			newGame.spectators[playerGuid] = newPlayer;
@@ -293,8 +297,15 @@ class _GameManager
 			throw new Error("You don't have kick permission!",);
 		}
 
+		if(existingGame.chooserGuid === targetGuid)
+		{
+			throw new Error("You can't kick the Card Czar.");
+		}
+
 		const newGame = {...existingGame};
 		delete newGame.players[targetGuid];
+		delete newGame.roundCards[targetGuid];
+		newGame.playerOrder = ArrayUtils.shuffle(Object.keys(newGame.players));
 
 		// If the owner deletes themselves, pick a new owner
 		if (targetGuid === ownerGuid)
@@ -329,10 +340,11 @@ class _GameManager
 		newGame.roundIndex = existingGame.roundIndex + 1;
 
 		const playerGuids = Object.keys(existingGame.players);
+		const nonRandomPlayerGuids = playerGuids.filter(pg => !newGame.players[pg].isRandom);
 
 		// Grab a new chooser
-		const chooserIndex = newGame.roundIndex % playerGuids.length;
-		const chooser = playerGuids[chooserIndex];
+		const chooserIndex = newGame.roundIndex % nonRandomPlayerGuids.length;
+		const chooser = nonRandomPlayerGuids[chooserIndex];
 		newGame.chooserGuid = chooser;
 
 		// Remove the played white card from each player's hand
@@ -418,7 +430,7 @@ class _GameManager
 		newGame.roundIndex = 0;
 		newGame.usedBlackCards = [];
 		newGame.usedWhiteCards = [];
-		newGame.revealIndex = 0;
+		newGame.revealIndex = -1;
 		newGame.roundCards = {};
 		newGame.roundStarted = false;
 		newGame.started = false;
@@ -510,6 +522,53 @@ class _GameManager
 		newGame.roundStarted = true;
 
 		await this.updateGame(newGame);
+
+		this.randomPlayersPlayCard(gameId);
+
+		return newGame;
+	}
+
+	private randomPlayersPlayCard(gameId: string)
+	{
+		this.getGame(gameId)
+			.then(async existingGame => {
+				const newGame = {...existingGame};
+				const blackCardDef = CardManager.blackCards[newGame.blackCard];
+				const targetPicked = blackCardDef.pick;
+
+				const randomPlayerGuids = Object.keys(newGame.players).filter(pg => newGame.players[pg].isRandom);
+
+				randomPlayerGuids.forEach(pg => {
+					const player = newGame.players[pg];
+					let cards: number[] = [];
+					for(let i = 0; i < targetPicked; i++)
+					{
+						const [pickedCard, newCards] = ArrayUtils.getRandomUnused(player.whiteCards, cards);
+						cards = newCards;
+					}
+
+					setTimeout(() => {
+						this.playCard(gameId, pg, cards);
+					}, Math.floor(Math.random() * 5000));
+				});
+			});
+	}
+
+	public async addRandomPlayer(gameId: string, playerGuid: string)
+	{
+		const existingGame = await this.getGame(gameId);
+
+		if (existingGame.ownerGuid !== playerGuid)
+		{
+			throw new Error("You are not the owner!");
+		}
+
+		let newGame = {...existingGame};
+
+		const used = Object.keys(newGame.players).map(pg => newGame.players[pg].nickname);
+		const [newNickname] = ArrayUtils.getRandomUnused(RandomPlayerNicknames, used);
+
+		newGame = await this.joinGame(shortid.generate(), gameId, newNickname, false, true);
 
 		return newGame;
 	}
