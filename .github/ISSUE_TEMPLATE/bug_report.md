@@ -20,4 +20,5 @@ Please fill out the following to the best of your ability, to help with investig
 
 5. Additional information
 Please provide any additional helpful information, like:
--
+- Browser
+- Device type
