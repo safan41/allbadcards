@@ -9,7 +9,7 @@ const entryPath = resolveApp("server/server.ts");
 
 const portEnvMap = {
     local: 5000,
-    prod: 9000,
+    prod: 80,
     beta: 9500
 };
 

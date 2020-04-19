@@ -96,7 +96,7 @@ export class RevealWhites extends React.Component <Props, State>
 			return null;
 		}
 
-		const lastCard = cardsRevealed.length === roundCardKeys.length;
+		const lastCard = realRevealIndex === roundCardKeys.length - 1;
 		const label = lastCard ? "Pick a winner" : "Next";
 
 		return (

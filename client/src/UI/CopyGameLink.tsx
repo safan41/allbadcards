@@ -62,7 +62,7 @@ export const CopyGameLink: React.FC<ICopyGameLinkProps> = (props) =>
 			<Chip
 				variant={"outlined"}
 				label={
-					<a href={link} className={classes.link}>
+					<a href={fullLink} className={classes.link}>
 						{link}
 					</a>
 				}

@@ -3,6 +3,7 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import classNames from "classnames";
 import {Typography} from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
+import {Platform} from "../../Global/Platform/platform";
 
 const useStyles = makeStyles({
 	callout: {
@@ -96,8 +97,9 @@ export const SponsorList = () =>
 				</div>
 			</div>
 			<Grid className={classes.sponsors}>
+				<Sponsor sponsor={undefined} isDiamondSponsor={true}/>
 				{sponsors.map(s =>
-					<Sponsor sponsor={s}/>
+					<Sponsor key={s?.url} sponsor={s}/>
 				)}
 			</Grid>
 		</>
@@ -106,40 +108,53 @@ export const SponsorList = () =>
 
 interface ISponsorProps
 {
+	isDiamondSponsor?: boolean;
 	sponsor: ISponsor | undefined;
 }
 
-const Sponsor: React.FC<ISponsorProps> = (props) =>
+export const Sponsor: React.FC<ISponsorProps> = (props) =>
 {
 	const classes = useStyles();
-
-	const url = props.sponsor?.url ?? "https://www.patreon.com/user?u=32889715";
 
 	const wrapperClasses = classNames(classes.sponsor, {
 		[classes.hasSponsor]: !!props.sponsor,
 		[classes.noSponsor]: !props.sponsor,
 	});
 
-	const byline = props.sponsor?.byline ?? "+ Sponsor";
-
 	return (
-		<Grid item xs={12} sm={6} md={4} className={wrapperClasses}>
-			<a href={url} target={"_blank"} rel={"noreferrer nofollow"}>
-				{props.sponsor !== undefined && (
-					<div style={{
-						width: "100%",
-						height: "5rem",
-						backgroundImage: `url(${props.sponsor.src})`,
-						backgroundSize: "contain",
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center"
-					}}/>
-				)}
-
-				<Typography style={{color: "black", fontSize: "12px"}}>
-					{byline}
-				</Typography>
-			</a>
+		<Grid item xs={12} sm={props.isDiamondSponsor ? 12 : 6} md={props.isDiamondSponsor ? 12 : 4} className={wrapperClasses}>
+			<SponsorInner {...props} />
 		</Grid>
 	);
 };
+
+const SponsorInner: React.FC<ISponsorProps> = (props) =>
+{
+	const url = props.sponsor?.url ?? "https://www.patreon.com/user?u=32889715";
+
+	const byline = props.sponsor?.byline ?? (props.isDiamondSponsor ? "+ Diamond Sponsor" : "+ Sponsor");
+
+	const track = () =>
+	{
+		Platform.trackEvent("sponsor-click", props.sponsor?.url);
+	};
+
+	return (
+		<a href={url} target={"_blank"} rel={"noreferrer nofollow"} onClick={track}>
+			{props.sponsor !== undefined && (
+				<div style={{
+					width: "100%",
+					height: "5rem",
+					backgroundImage: `url(${props.sponsor.src})`,
+					backgroundSize: "contain",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center"
+				}}/>
+			)}
+
+			<Typography style={{color: "black", fontSize: "12px"}}>
+				{byline}
+			</Typography>
+		</a>
+	);
+}

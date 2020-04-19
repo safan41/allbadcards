@@ -34,13 +34,17 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 		return <Typography>No Game Found</Typography>;
 	}
 
+	const playerCount = Object.keys(gameData.game?.players ?? {}).length;
+
 	return (
 		<div style={{paddingTop: "2rem"}}>
 			<Typography variant={"h4"}>Game</Typography>
 			<br/>
 			<CopyGameLink />
 			<Divider style={{margin: "3rem 0"}} />
-			<Typography className={classes.playersLabel} variant={"h4"}>Players</Typography>
+			<Typography className={classes.playersLabel} variant={"h4"}>
+				Players <span style={{fontSize: "1rem"}}>({playerCount} / 50 max)</span>
+			</Typography>
 			<GameRoster />
 			{props.children}
 		</div>

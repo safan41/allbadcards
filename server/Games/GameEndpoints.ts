@@ -2,19 +2,20 @@ import {Express, Response} from "express";
 import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
-import {logMessage} from "../logger";
+import {logError, logMessage} from "../logger";
 
 const cache = apicache.middleware;
 
 const onError = (res: Response, error: Error) =>
 {
 	res.status(500).send({message: error.message, stack: error.stack});
+	logError({message: error.message, stack: error.stack});
 	throw error;
 };
 
 export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
-	app.get("/api/game/get", async (req, res, next) =>
+	app.get("/api/game/get", cache("10 seconds"), async (req, res, next) =>
 	{
 		logMessage(req.url, req.query);
 
@@ -29,7 +30,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 	});
 
-	app.get("/api/game/get-white-card", cache("10 minutes"), async (req, res, next) =>
+	app.get("/api/game/get-white-card", cache("1 hour"), async (req, res, next) =>
 	{
 		logMessage(req.url, req.query);
 		try
@@ -44,7 +45,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 	});
 
-	app.get("/api/game/get-packnames", cache("10 minutes"), async (req, res, next) =>
+	app.get("/api/game/get-packnames", cache("1 hour"), async (req, res, next) =>
 	{
 		try
 		{
@@ -67,7 +68,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 	});
 
-	app.get("/api/game/get-black-card", cache("10 minutes"), async (req, res, next) =>
+	app.get("/api/game/get-black-card", cache("1 hour"), async (req, res, next) =>
 	{
 		logMessage(req.url, req.query);
 		try
@@ -297,7 +298,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 	});
 
-	app.get("*", (req, res) =>
+	app.get("*", cache("10 minutes"), (req, res) =>
 	{
 		res.sendFile("index.html", {root: clientFolder});
 	});

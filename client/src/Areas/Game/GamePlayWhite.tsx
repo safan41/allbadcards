@@ -93,7 +93,14 @@ export class GamePlayWhite extends React.Component<Props, State>
 			return false;
 		}
 
-		const lastUsedCardsSuckIndex = parseInt(localStorage.getItem(this.getCardsSuckLsKey(gameId)) ?? "-99");
+		let lastUsedCardsSuckIndex = parseInt(localStorage.getItem(this.getCardsSuckLsKey(gameId)) ?? "-99");
+
+		if (this.state?.gameData?.game && (this.state.gameData?.game?.roundIndex ?? 0 < lastUsedCardsSuckIndex))
+		{
+			lastUsedCardsSuckIndex = 0;
+			this.setCardsSuckUsedRound(gameId, 0);
+		}
+
 		const diff = currentRoundIndex - lastUsedCardsSuckIndex;
 
 		return diff >= 5;
@@ -129,6 +136,11 @@ export class GamePlayWhite extends React.Component<Props, State>
 		return `cards-suck-last-round-index:${gameId}`;
 	}
 
+	private setCardsSuckUsedRound(gameId: string, roundIndex?: number)
+	{
+		localStorage.setItem(this.getCardsSuckLsKey(gameId), String(roundIndex ?? 0));
+	}
+
 	private onForfeit = () =>
 	{
 		const didConfirm = confirm("" +
@@ -145,7 +157,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 
 			if (gameId)
 			{
-				localStorage.setItem(this.getCardsSuckLsKey(gameId), String(this.state.gameData.game?.roundIndex ?? 0));
+				this.setCardsSuckUsedRound(gameId, this.state.gameData.game?.roundIndex);
 			}
 
 			let targetPicked = this.state.gameData.blackCardDef?.pick ?? 1;

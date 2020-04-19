@@ -9,6 +9,8 @@ import {Config} from "./config/config";
 import {CardManager} from "./Games/CardManager";
 import {CreateGameManager} from "./Games/GameManager";
 import * as Sentry from "@sentry/node";
+import * as https from "https";
+import * as fs from "fs";
 
 // Create the app
 const app = express();
@@ -17,7 +19,7 @@ const clientFolder = path.join(process.cwd(), 'client');
 
 app.use(Sentry.Handlers.requestHandler() as any);
 
-if(Config.Environment !=="local")
+if (Config.Environment !== "local")
 {
 	Sentry.init({dsn: 'https://055714bf94b544a79ce023c1bc076ac5@o377988.ingest.sentry.io/5200777'});
 }
@@ -46,8 +48,30 @@ RegisterGameEndpoints(app, clientFolder);
 
 app.use(Sentry.Handlers.errorHandler() as any);
 
-// Start the server
-const server = app.listen(port, () => console.log(`Listening on port ${port}`));
-server.setTimeout(10000);
+const resolveKey = (keypath: string) =>
+{
+	return path.resolve(process.cwd(), path.join("../../keys", keypath));
+};
 
-CreateGameManager(server);
+// Start the server
+
+
+if (Config.Environment !== "local")
+{
+	const server = https.createServer({
+		key: fs.readFileSync(resolveKey('./allbad.cards-key.pem')),
+		cert: fs.readFileSync(resolveKey('./allbad.cards-crt.pem')),
+		ca: fs.readFileSync(resolveKey('./allbad.cards-chain.pem')),
+	}, app).listen(443, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
+		.setTimeout(1000);
+
+	CreateGameManager(server);
+}
+else
+{
+	const server = app.listen(port, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
+		.setTimeout(1000);
+
+	CreateGameManager(server);
+}
+

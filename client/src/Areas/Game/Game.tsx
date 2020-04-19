@@ -1,8 +1,7 @@
 import GameStart from "./GameStart";
 import {RouteComponentProps, withRouter} from "react-router";
-import React, {useEffect} from "react";
+import React from "react";
 import GameJoin from "./GameJoin";
-import {gamesOwnedLsKey} from "../GameDashboard/GameDashboard";
 import {GameDataStore, IGameDataStorePayload} from "../../Global/DataStore/GameDataStore";
 import {GamePlayWhite} from "./GamePlayWhite";
 import {IUserData, UserDataStore} from "../../Global/DataStore/UserDataStore";
@@ -11,8 +10,11 @@ import Helmet from "react-helmet";
 import {GamePlaySpectate} from "./GamePlaySpectate";
 import {Typography} from "@material-ui/core";
 import {ContainerProgress} from "../../UI/ContainerProgress";
-import Button from "@material-ui/core/Button";
 import {LoadingButton} from "../../UI/LoadingButton";
+import {Support} from "./Components/Support";
+import Grid from "@material-ui/core/Grid";
+import {Sponsor} from "../GameDashboard/SponsorList";
+import Divider from "@material-ui/core/Divider";
 
 interface IGameParams
 {
@@ -24,10 +26,13 @@ interface IGameState
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
 	restartLoading: boolean;
+	restartDelayed: boolean;
 }
 
 class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 {
+	private delayTimeout = 0;
+
 	constructor(props: RouteComponentProps<IGameParams>)
 	{
 		super(props);
@@ -35,7 +40,8 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
-			restartLoading: false
+			restartLoading: false,
+			restartDelayed: true,
 		};
 	}
 
@@ -50,6 +56,32 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 		UserDataStore.listen(data => this.setState({
 			userData: data
 		}));
+	}
+
+	private getWinnerFromState(state: IGameState)
+	{
+		const {
+			players,
+			settings
+		} = state.gameData.game ?? {};
+
+		const playerGuids = Object.keys(players ?? {});
+		const winnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 99));
+		return winnerGuid;
+	}
+
+	public componentDidUpdate(prevProps: Readonly<RouteComponentProps<IGameParams>>, prevState: Readonly<IGameState>, snapshot?: any): void
+	{
+		const hadWinner = this.getWinnerFromState(prevState);
+		const hasWinner = this.getWinnerFromState(this.state);
+		if(!hadWinner && hasWinner && this.delayTimeout === 0)
+		{
+			this.delayTimeout = window.setTimeout(() => {
+				this.setState({
+					restartDelayed: false
+				});
+			}, 7000);
+		}
 	}
 
 	private restartClick = (playerGuid: string) =>
@@ -107,6 +139,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 				<Helmet>
 					<title>{title}</title>
 				</Helmet>
+				<div style={{minHeight: "100vh"}}>
 				{!winnerGuid && settings?.inviteLink && (
 					<Typography variant={"caption"}>
 						Chat/Video Invite: <a href={settings.inviteLink} target={"_blank"} rel={"nofollow noreferrer"}>{inviteLink}</a>
@@ -115,26 +148,15 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 				{winnerGuid && (
 					<div>
 						<Typography variant={"h3"} style={{textAlign: "center"}}>Game over! {players?.[winnerGuid].nickname} is the winner.</Typography>
-						<div style={{
-							marginTop: "3rem",
-							textAlign: "center"
-						}}>
-							<Typography variant={"h5"}>Did you enjoy the game? Please consider supporting the site!</Typography>
-							<a href='https://ko-fi.com/A76217J' target='_blank'>
-								<img
-									height='36'
-									style={{border: 0, height: 36, marginTop: "1rem"}}
-									src='https://cdn.ko-fi.com/cdn/kofi2.png?v=2'
-									alt='Buy Me a Coffee at ko-fi.com'
-								/>
-							</a>
-						</div>
+
+						<Support />
+
 						{playerGuid === ownerGuid && (
 							<div style={{
-								marginTop: "3rem",
+								marginTop: "5rem",
 								textAlign: "center"
 							}}>
-								<LoadingButton loading={this.state.restartLoading} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>
+								<LoadingButton loading={this.state.restartLoading || this.state.restartDelayed} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>
 									Restart this game?
 								</LoadingButton>
 							</div>
@@ -160,6 +182,11 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 						)}
 					</>
 				)}
+				</div>
+				<Grid style={{marginTop: "5rem"}}>
+					<Divider style={{margin: "1rem 0"}} />
+					<Sponsor sponsor={undefined} isDiamondSponsor={true}/>
+				</Grid>
 			</>
 		);
 	}
