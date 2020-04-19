@@ -9,6 +9,8 @@ import {MuiThemeProvider} from "@material-ui/core";
 import {SimplePaletteColorOptions} from "@material-ui/core/styles";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
+require('es6-promise').polyfill();
+require('promise.prototype.finally');
 
 const primary: SimplePaletteColorOptions = {
 	main: "#000",

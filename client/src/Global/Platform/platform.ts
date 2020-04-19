@@ -67,7 +67,7 @@ class _Platform
 
 	private loadedWhiteCards: { [cardId: string]: IWhiteCard } = {};
 
-	private static trackEvent(action: string, label?: string, value?: number)
+	public trackEvent(action: string, label?: string, value?: number)
 	{
 		ReactGA.event({
 			action,
@@ -122,7 +122,7 @@ class _Platform
 
 	public async createGame(ownerGuid: string, nickname: string)
 	{
-		_Platform.trackEvent("create");
+		this.trackEvent("create");
 
 		return _Platform.doPost<GameItem>("/api/game/create", {
 			ownerGuid,
@@ -132,7 +132,7 @@ class _Platform
 
 	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating = false)
 	{
-		_Platform.trackEvent("join", gameId);
+		this.trackEvent("join", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/join", {
 			playerGuid,
@@ -144,7 +144,7 @@ class _Platform
 
 	public async removePlayer(gameId: string, targetGuid: string, playerGuid: string)
 	{
-		_Platform.trackEvent("remove-player", gameId);
+		this.trackEvent("remove-player", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/kick", {
 			gameId,
@@ -162,7 +162,7 @@ class _Platform
 		inviteLink: string | null = null,
 		password: string | null = null)
 	{
-		_Platform.trackEvent("start", gameId);
+		this.trackEvent("start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/start", {
 			gameId,
@@ -177,7 +177,7 @@ class _Platform
 
 	public async playCards(gameId: string, playerGuid: string, cardIds: number[])
 	{
-		_Platform.trackEvent("play-cards", gameId);
+		this.trackEvent("play-cards", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/play-cards", {
 			gameId,
@@ -188,7 +188,7 @@ class _Platform
 
 	public async forfeit(gameId: string, playerGuid: string, playedCards: number[])
 	{
-		_Platform.trackEvent("my-cards-suck", gameId);
+		this.trackEvent("my-cards-suck", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/forfeit", {
 			gameId,
@@ -199,7 +199,7 @@ class _Platform
 
 	public async restart(gameId: string, playerGuid: string)
 	{
-		_Platform.trackEvent("game-restart", gameId);
+		this.trackEvent("game-restart", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/restart", {
 			gameId,
@@ -209,7 +209,7 @@ class _Platform
 
 	public async selectWinnerCard(gameId: string, playerGuid: string, winningPlayerGuid: string)
 	{
-		_Platform.trackEvent("selected-winner", gameId);
+		this.trackEvent("selected-winner", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/select-winner-card", {
 			gameId,
@@ -228,7 +228,7 @@ class _Platform
 
 	public async startRound(gameId: string, ownerGuid: string)
 	{
-		_Platform.trackEvent("round-start", gameId);
+		this.trackEvent("round-start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/start-round", {
 			gameId,
@@ -238,7 +238,7 @@ class _Platform
 
 	public async addRandomPlayer(gameId: string, ownerGuid: string)
 	{
-		_Platform.trackEvent("round-start", gameId);
+		this.trackEvent("round-start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/add-random-player", {
 			gameId,

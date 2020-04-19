@@ -43,8 +43,6 @@ export class CardManager
 		this.packOrder = allCards.order;
 		this.blackCards = allCards.blackCards;
 		this.whiteCards = allCards.whiteCards;
-
-		console.log("Done");
 	}
 
 	private static getAllowedCard(cards: number[], usedCards: number[]): number

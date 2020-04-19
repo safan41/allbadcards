@@ -8,6 +8,7 @@ import * as http from "http";
 import {Config} from "../config/config";
 import {ArrayUtils} from "../Utils/ArrayUtils";
 import {RandomPlayerNicknames} from "./RandomPlayers";
+import {logError, logMessage} from "../logger";
 
 type PlayerMap = { [key: string]: GamePlayer };
 
@@ -85,7 +86,7 @@ class _GameManager
 
 	constructor(server: http.Server)
 	{
-		console.log("Starting WebSocket Server");
+		logMessage("Starting WebSocket Server");
 
 		Database.initialize();
 
@@ -203,7 +204,7 @@ class _GameManager
 
 	public async createGame(ownerGuid: string, nickname: string, roundsToWin = 99, password = ""): Promise<GameItem>
 	{
-		console.log(`Creating game for ${ownerGuid}`);
+		logMessage(`Creating game for ${ownerGuid}`);
 
 		const gameId = hri.random();
 
@@ -240,7 +241,7 @@ class _GameManager
 
 			const game = await this.getGame(gameId);
 
-			console.log(`Created game for ${ownerGuid}: ${game.id}`);
+			logMessage(`Created game for ${ownerGuid}: ${game.id}`);
 
 			this.updateSocketGames(game);
 
@@ -248,7 +249,7 @@ class _GameManager
 		}
 		catch (e)
 		{
-			console.error(e);
+			logError(e);
 
 			throw new Error("Could not create game.");
 		}
@@ -324,7 +325,7 @@ class _GameManager
 
 		if (existingGame.chooserGuid !== chooserGuid)
 		{
-			throw new Error("You are not the cchooser!");
+			throw new Error("You are not the chooser!");
 		}
 
 		let newGame = {...existingGame};

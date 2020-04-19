@@ -9,6 +9,8 @@ import Divider from "@material-ui/core/Divider";
 import {LoadingButton} from "../../UI/LoadingButton";
 import {MdAdd} from "react-icons/all";
 import {useDataStore} from "../../Global/Utils/HookUtils";
+import {Tooltip} from "@material-ui/core";
+import Button from "@material-ui/core/Button";
 
 interface IGameStartProps
 {
@@ -57,9 +59,11 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 			<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
 				Start
 			</LoadingButton>
-			<LoadingButton startIcon={<MdAdd/>} loading={randomPlayerLoading} variant={"contained"} color={"primary"} onClick={onClickAddRandom} style={{marginLeft: "1rem"}} disabled={!canAddRandom}>
-				Random Player
-			</LoadingButton>
+			<Tooltip arrow title={"A fake player! If he wins, everyone else feels shame. Add up to 10."}>
+				<Button startIcon={<MdAdd/>} variant={"contained"} color={"primary"} onClick={onClickAddRandom} style={{marginLeft: "1rem"}} disabled={!canAddRandom}>
+					AI Player
+				</Button>
+			</Tooltip>
 			<Divider style={{margin: "3rem 0"}}/>
 			<Typography variant={"h4"}>Settings</Typography>
 			<GameSettings/>

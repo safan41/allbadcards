@@ -68,24 +68,27 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			console.log(e);
 			this.ws?.send(JSON.stringify(UserDataStore.state));
 
-			Platform.getPacks()
-				.then(data =>
-				{
-					const defaultPacks = this.state.familyMode
-						? [data[1].packId]
-						: data.slice(0, 20).map(p => p.packId);
+			if (this.state.packs.length === 0)
+			{
+				Platform.getPacks()
+					.then(data =>
+					{
+						const defaultPacks = this.state.familyMode
+							? [data[1].packId]
+							: data.slice(0, 20).map(p => p.packId);
 
-					this.update({
-						packs: data,
-						includedPacks: defaultPacks
-					})
-				});
+						this.update({
+							packs: data,
+							includedPacks: defaultPacks
+						})
+					});
+			}
 		};
 
 		this.ws.onmessage = (e) =>
 		{
-			const data = JSON.parse(e.data) as {game: GameItem};
-			if(!this.state.game?.id || data.game.id === this.state.game?.id)
+			const data = JSON.parse(e.data) as { game: GameItem };
+			if (!this.state.game?.id || data.game.id === this.state.game?.id)
 			{
 				this.update(data);
 			}
@@ -191,7 +194,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	private loadBlackCard()
 	{
 		const blackCard = this.state.game?.blackCard;
-		if(blackCard === undefined || blackCard === -1)
+		if (blackCard === undefined || blackCard === -1)
 		{
 			return Promise.resolve();
 		}
@@ -343,7 +346,8 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			throw new Error("Invalid card or game!");
 		}
 
-		return Platform.restart(game.id, playerGuid).then(() => {
+		return Platform.restart(game.id, playerGuid).then(() =>
+		{
 			this.update({
 				loaded: true
 			});
