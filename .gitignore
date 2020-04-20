@@ -1,2 +1,8 @@
 /client/node_modules/
 /node_modules/
+/builds/keys/
+/builds/
+/client/build/
+/client/yarn-error.log
+/combined.log
+/error.log

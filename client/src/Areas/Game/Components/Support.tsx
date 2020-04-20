@@ -15,7 +15,7 @@ export const Support = () =>
 
 	const thankYouButton = randomThankYou > 0.5
 		? (
-			<a href='https://ko-fi.com/A76217J' target='_blank'>
+			<a href='https://ko-fi.com/A76217J' target='_blank' onClick={() => Platform.trackEvent("support-link-click", "kofi")}>
 				<img
 					height='36'
 					style={{border: 0, height: 36, marginTop: "1rem"}}
@@ -29,6 +29,7 @@ export const Support = () =>
 				color={"primary"}
 				style={{color: "white", textDecoration: "none", marginTop: "1rem"}}
 				startIcon={<Twemoji text={"💸"}/>}
+				onClick={() => Platform.trackEvent("support-link-click", "bmac")}
 				href="https://www.buymeacoffee.com/allbadcards" target="_blank"
 			>
 				Send a few bucks his way

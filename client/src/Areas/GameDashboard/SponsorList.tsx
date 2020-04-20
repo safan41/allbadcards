@@ -4,6 +4,7 @@ import classNames from "classnames";
 import {Typography} from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import {Platform} from "../../Global/Platform/platform";
+import Tooltip from "@material-ui/core/Tooltip";
 
 const useStyles = makeStyles({
 	callout: {
@@ -74,7 +75,11 @@ export const SponsorList = () =>
 			url: "https://song-saga.com",
 			byline: "The music and story game that rocks 🤘"
 		},
-		undefined,
+		{
+			byline: "Comprehensive Solutions for SMB",
+			url: "https://www.concentricsolvesit.com/",
+			src: "/sponsors/concentric-it-solutions.png"
+		},
 		undefined,
 		undefined,
 		undefined
@@ -139,13 +144,15 @@ const SponsorInner: React.FC<ISponsorProps> = (props) =>
 		Platform.trackEvent("sponsor-click", props.sponsor?.url);
 	};
 
-	return (
+	const hasSponsor = props.sponsor !== undefined;
+
+	const link = (
 		<a href={url} target={"_blank"} rel={"noreferrer nofollow"} onClick={track}>
-			{props.sponsor !== undefined && (
+			{hasSponsor && (
 				<div style={{
 					width: "100%",
 					height: "5rem",
-					backgroundImage: `url(${props.sponsor.src})`,
+					backgroundImage: `url(${props.sponsor?.src})`,
 					backgroundSize: "contain",
 					backgroundRepeat: "no-repeat",
 					backgroundPosition: "center"
@@ -157,4 +164,14 @@ const SponsorInner: React.FC<ISponsorProps> = (props) =>
 			</Typography>
 		</a>
 	);
-}
+
+	return (
+		hasSponsor
+			? link
+			: (
+				<Tooltip title={"Become a patreon sponsor, or email allbadcards[at]gmail.com for other options."}>
+					{link}
+				</Tooltip>
+			)
+	);
+};
