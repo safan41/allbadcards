@@ -31,6 +31,7 @@ import {ErrorDataStore} from "../Global/DataStore/ErrorDataStore";
 import List from "@material-ui/core/List";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItem from "@material-ui/core/ListItem";
+import {ErrorBoundary} from "./ErrorBoundary";
 
 const useStyles = makeStyles({
 	logoIcon: {
@@ -141,7 +142,9 @@ const App: React.FC = () =>
 							</AppBar>
 						</CardMedia>
 						<CardContent style={{paddingTop: 0}}>
+							<ErrorBoundary>
 							<Routes/>
+							</ErrorBoundary>
 						</CardContent>
 					</Container>
 					<div style={{textAlign: "center", padding: "0.5rem 0"}}>

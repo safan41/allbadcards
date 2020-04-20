@@ -11,6 +11,7 @@ import {CreateGameManager} from "./Games/GameManager";
 import * as Sentry from "@sentry/node";
 import * as https from "https";
 import * as fs from "fs";
+import {logError, logWarning} from "./logger";
 
 // Create the app
 const app = express();
@@ -63,15 +64,14 @@ if (Config.Environment !== "local")
 		cert: fs.readFileSync(resolveKey('./allbad.cards-crt.pem')),
 		ca: fs.readFileSync(resolveKey('./allbad.cards-chain.pem')),
 	}, app).listen(443, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
-		.setTimeout(1000);
+		.setTimeout(10000);
 
 	CreateGameManager(server);
 }
 else
 {
 	const server = app.listen(port, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
-		.setTimeout(1000);
+		.setTimeout(10000);
 
 	CreateGameManager(server);
 }
-

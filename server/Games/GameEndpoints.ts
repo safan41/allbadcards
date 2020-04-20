@@ -6,10 +6,10 @@ import {logError, logMessage} from "../logger";
 
 const cache = apicache.middleware;
 
-const onError = (res: Response, error: Error) =>
+const onError = (res: Response, error: Error, ...more: any[]) =>
 {
 	res.status(500).send({message: error.message, stack: error.stack});
-	logError({message: error.message, stack: error.stack});
+	logError({message: error.message, stack: error.stack}, more);
 	throw error;
 };
 
@@ -26,7 +26,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -41,7 +41,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -64,7 +64,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -79,7 +79,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -93,7 +93,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -113,7 +113,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -128,7 +128,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -150,7 +150,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -174,7 +174,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -189,7 +189,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -204,7 +204,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -219,7 +219,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -234,7 +234,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -249,7 +249,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -264,7 +264,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -279,7 +279,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
@@ -294,11 +294,11 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		}
 		catch (error)
 		{
-			onError(res, error);
+			onError(res, error, req.url, req.query, req.body);
 		}
 	});
 
-	app.get("*", cache("10 minutes"), (req, res) =>
+	app.get("*", (req, res) =>
 	{
 		res.sendFile("index.html", {root: clientFolder});
 	});
