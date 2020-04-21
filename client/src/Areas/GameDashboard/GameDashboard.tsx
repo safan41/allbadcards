@@ -140,25 +140,11 @@ class GameDashboard extends React.Component<Props, State>
 					<Grid container>
 						<Grid item md={7} xs={12}>
 							<Typography>
-								<strong>Updates - 4/17</strong>
-								<li>Added option to add a random player (Rando Cardrissian rule)! Can add up to 10 random players.</li>
-								<li>New game URLs are readable now</li>
-								<li>Improved loading states to prevent errors when buttons are clicked multiple times</li>
-								<li>Made card reveal of player order random</li>
-								<li>UI Improvement for stating games</li>
-								<li>Fixed update behavior if more than one tab is open</li>
-								<li>Fixed repeated cards (again)</li>
-								<li>Bug fixes</li>
+								<strong>Updates - 4/21</strong>
+								<li>Implemented scalable server solution (first iteration) to work for more traffic</li>
+								<li>Pick winner screen now randomizes card order</li>
+								<li>Changed code to use AGPL 3.0 license</li>
 								<br/>
-								<strong>Updates - 4/14</strong>
-								<li>Added option to specify an invite link for chat or video room</li>
-								<li>Improved UI for picking players</li>
-								<li>Added option to start game over when you're finished</li>
-								<li>Repeat cards no longer show</li>
-								<li>Fixed round count slider</li>
-								<li>Viewing roster no longer breaks the game</li>
-								<li>Added option to specify an invite link for chat or video room</li>
-								<li>Added Twitter feed to homepage</li>
 							</Typography>
 						</Grid>
 						<Grid item md={1} xs={12} style={{display: "flex", justifyContent: "center", margin: "2rem 0"}}>

@@ -153,7 +153,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 
 						{playerGuid === ownerGuid && (
 							<div style={{
-								marginTop: "5rem",
+								marginTop: "7rem",
 								textAlign: "center"
 							}}>
 								<LoadingButton loading={this.state.restartLoading || this.state.restartDelayed} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>

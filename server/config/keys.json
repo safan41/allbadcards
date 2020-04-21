@@ -1,9 +1,0 @@
-[
-  {
-    "mongo": {
-      "local": "mongodb://localhost:27017",
-      "prod": "mongodb://localhost:27017",
-      "beta": "mongodb://localhost:27017"
-    }
-  }
-]

@@ -5,10 +5,13 @@ import {CardManager} from "./CardManager";
 import WebSocket from "ws";
 import {GameMessage} from "../SocketMessages/GameMessage";
 import * as http from "http";
-import {Config} from "../config/config";
+import {Config} from "../../config/config";
 import {ArrayUtils} from "../Utils/ArrayUtils";
 import {RandomPlayerNicknames} from "./RandomPlayers";
 import {logError, logMessage} from "../logger";
+import {createClient, RedisClient} from "redis";
+import * as fs from "fs";
+import * as path from "path";
 
 type PlayerMap = { [key: string]: GamePlayer };
 
@@ -80,6 +83,8 @@ export let GameManager: _GameManager;
 class _GameManager
 {
 	private wss: WebSocket.Server;
+	private redisPub: RedisClient;
+	private redisSub: RedisClient;
 
 	// key = playerGuid, value = WS key
 	private wsClientPlayerMap: { [key: string]: string[] } = {};
@@ -89,7 +94,50 @@ class _GameManager
 		logMessage("Starting WebSocket Server");
 
 		Database.initialize();
+		this.initializeWebSockets(server);
+		this.initializeRedis();
+	}
 
+	public static create(server: http.Server)
+	{
+		GameManager = new _GameManager(server);
+	}
+
+	private static get games()
+	{
+		return Database.db.collection<GameItem>("games");
+	}
+
+	private initializeRedis()
+	{
+		const keysFile = fs.readFileSync(path.resolve(process.cwd(), "./config/keys.json"), "utf8");
+		const keys = JSON.parse(keysFile)[0];
+		const redisHost = keys.redisHost[Config.Environment];
+		const redisPort = keys.redisPort;
+
+		this.redisPub = createClient({
+			host: redisHost,
+			port: redisPort
+		});
+
+		this.redisSub = createClient({
+			host: redisHost,
+			port: redisPort
+		});
+
+		this.redisSub.on("message", async (channel, gameDataString) =>
+		{
+			const gameItem = JSON.parse(gameDataString) as GameItem;
+			logMessage(`Redis update for game ${gameItem.id}`);
+
+			this.updateSocketGames(gameItem);
+		});
+
+		this.redisSub.subscribe(`games`);
+	}
+
+	private initializeWebSockets(server: http.Server)
+	{
 		const port = Config.Environment === "local" ? {port: 8080} : undefined;
 
 		this.wss = new WebSocket.Server({
@@ -123,16 +171,7 @@ class _GameManager
 				});
 			}
 		});
-	}
 
-	public static create(server: http.Server)
-	{
-		GameManager = new _GameManager(server);
-	}
-
-	private get games()
-	{
-		return Database.db.collection<GameItem>("games");
 	}
 
 	private createPlayer(playerGuid: string, nickname: string, isSpectating: boolean, isRandom: boolean): GamePlayer
@@ -152,7 +191,7 @@ class _GameManager
 		let existingGame: GameItem | null;
 		try
 		{
-			existingGame = await this.games.findOne({
+			existingGame = await _GameManager.games.findOne({
 				id: gameId
 			});
 		}
@@ -177,9 +216,14 @@ class _GameManager
 			$set: newGame
 		});
 
-		this.updateSocketGames(newGame);
+		this.updateRedis(newGame);
 
 		return newGame;
+	}
+
+	private updateRedis(gameItem: GameItem)
+	{
+		this.redisPub.publish("games", JSON.stringify(gameItem));
 	}
 
 	private updateSocketGames(game: GameItem)
@@ -237,7 +281,7 @@ class _GameManager
 				}
 			};
 
-			await this.games.insertOne(initialGameItem);
+			await _GameManager.games.insertOne(initialGameItem);
 
 			const game = await this.getGame(gameId);
 
@@ -298,7 +342,7 @@ class _GameManager
 			throw new Error("You don't have kick permission!",);
 		}
 
-		if(existingGame.chooserGuid === targetGuid)
+		if (existingGame.chooserGuid === targetGuid)
 		{
 			throw new Error("You can't kick the Card Czar.");
 		}
@@ -423,7 +467,8 @@ class _GameManager
 			throw new Error("User cannot start game");
 		}
 
-		Object.keys(newGame.players).forEach(pg => {
+		Object.keys(newGame.players).forEach(pg =>
+		{
 			newGame.players[pg].whiteCards = [];
 			newGame.players[pg].wins = 0;
 		});
@@ -532,23 +577,26 @@ class _GameManager
 	private randomPlayersPlayCard(gameId: string)
 	{
 		this.getGame(gameId)
-			.then(async existingGame => {
+			.then(async existingGame =>
+			{
 				const newGame = {...existingGame};
 				const blackCardDef = CardManager.blackCards[newGame.blackCard];
 				const targetPicked = blackCardDef.pick;
 
 				const randomPlayerGuids = Object.keys(newGame.players).filter(pg => newGame.players[pg].isRandom);
 
-				randomPlayerGuids.forEach(pg => {
+				randomPlayerGuids.forEach(pg =>
+				{
 					const player = newGame.players[pg];
 					let cards: number[] = [];
-					for(let i = 0; i < targetPicked; i++)
+					for (let i = 0; i < targetPicked; i++)
 					{
 						const [pickedCard, newCards] = ArrayUtils.getRandomUnused(player.whiteCards, cards);
 						cards = newCards;
 					}
 
-					setTimeout(() => {
+					setTimeout(() =>
+					{
 						this.playCard(gameId, pg, cards);
 					}, Math.floor(Math.random() * 5000));
 				});

@@ -10,7 +10,7 @@ const resolve = relativePath => path.resolve(appDirectory, relativePath);
 const serverEnv = process.argv.find(a => a.includes("serverenv")).split("=")[1];
 
 const date = new Date();
-const buildDirName = `build_${date.getFullYear()}_${date.getMonth() + 1}_${date.getDate()}_${date.getHours()}_${date.getMinutes()}_${date.getSeconds()}`;
+const buildDirName = `build_${serverEnv}___${date.getFullYear()}_${date.getMonth() + 1}_${date.getDate()}_${date.getHours()}_${date.getMinutes()}_${date.getSeconds()}`;
 const renamedBuildDirName = `${buildDirName}_complete`;
 const buildDir = resolve(`builds/${buildDirName}`);
 const renamedBuildDir = resolve(`builds/${renamedBuildDirName}`);
