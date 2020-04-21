@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import serveStatic from "serve-static";
 import bodyParser from "body-parser";
 import {RegisterGameEndpoints} from "./Games/GameEndpoints";
-import {Config} from "./config/config";
+import {Config} from "../config/config";
 import {CardManager} from "./Games/CardManager";
 import {CreateGameManager} from "./Games/GameManager";
 import * as Sentry from "@sentry/node";
@@ -56,22 +56,35 @@ const resolveKey = (keypath: string) =>
 
 // Start the server
 
-
-if (Config.Environment !== "local")
+let pemPrefix = "";
+switch(Config.Environment)
 {
-	const server = https.createServer({
-		key: fs.readFileSync(resolveKey('./allbad.cards-key.pem')),
-		cert: fs.readFileSync(resolveKey('./allbad.cards-crt.pem')),
-		ca: fs.readFileSync(resolveKey('./allbad.cards-chain.pem')),
-	}, app).listen(443, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
-		.setTimeout(10000);
+	case "prod":
+		pemPrefix = "allbad.cards";
+		break;
 
-	CreateGameManager(server);
+	case "beta":
+		pemPrefix = "beta.allbad.cards";
+		break;
 }
-else
-{
-	const server = app.listen(port, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
-		.setTimeout(10000);
 
-	CreateGameManager(server);
-}
+
+const server = app.listen(port, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
+	.setTimeout(10000);
+
+CreateGameManager(server);
+
+// if (Config.Environment === "prod")
+// {
+// 	const server = https.createServer({
+// 		key: fs.readFileSync(resolveKey(`./${pemPrefix}-key.pem`)),
+// 		cert: fs.readFileSync(resolveKey(`./${pemPrefix}-crt.pem`)),
+// 		ca: fs.readFileSync(resolveKey(`./${pemPrefix}-chain.pem`)),
+// 	}, app).listen(443, () => console.log(`Listening on port ${port}, environment: ${Config.Environment}`))
+// 		.setTimeout(10000);
+//
+// 	CreateGameManager(server);
+// }
+// else
+// {
+// }

@@ -1,7 +1,7 @@
 import {MongoClient} from "mongodb";
 import * as fs from "fs";
 import * as path from "path";
-import {Config} from "../config/config";
+import {Config} from "../../config/config";
 
 class _Database
 {
@@ -11,7 +11,7 @@ class _Database
 
 	constructor()
 	{
-		const keysFile = fs.readFileSync(path.resolve(process.cwd(), "./server/config/keys.json"), "utf8");
+		const keysFile = fs.readFileSync(path.resolve(process.cwd(), "./config/keys.json"), "utf8");
 		const keys = JSON.parse(keysFile)[0];
 		this.url = keys.mongo[Config.Environment];
 	}

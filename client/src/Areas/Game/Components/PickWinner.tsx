@@ -57,12 +57,14 @@ export const PickWinner: React.FC<IPickWinnerProps> = (
 
 	const {
 		roundCards,
+		playerOrder,
+		chooserGuid
 	} = gameData.game;
 
-	const roundCardKeys = Object.keys(roundCards ?? {});
-	const roundCardValues = roundCardKeys
-		.map(playerGuid => roundCards[playerGuid]
-			.map(cardId => gameData.roundCardDefs[cardId]));
+	const roundCardsDefined = roundCards ?? {};
+	const roundCardKeys = Object.keys(roundCardsDefined);
+	const roundCardValues = playerOrder.filter(a => a !== chooserGuid)
+		.map(playerGuid => roundCardsDefined[playerGuid]?.map(cardId => gameData.roundCardDefs[cardId]));
 
 
 	return (

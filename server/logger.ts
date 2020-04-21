@@ -1,5 +1,5 @@
 import * as winston from "winston";
-import {Config} from "./config/config";
+import {Config} from "../config/config";
 
 require('log-timestamp');
 
