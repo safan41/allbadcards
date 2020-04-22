@@ -1,4 +1,4 @@
-import {createSocketMessageClass, SocketMessage} from "./SocketMessage";
-import {GameItem} from "../Games/GameManager";
+import {createSocketMessageClass} from "./SocketMessage";
+import {GamePayload} from "../Games/GameManager";
 
-export const GameMessage = createSocketMessageClass<GameItem>("game");
+export const GameMessage = createSocketMessageClass<GamePayload>("game");

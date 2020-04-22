@@ -1,5 +1,5 @@
 import GameStart from "./GameStart";
-import {RouteComponentProps, withRouter} from "react-router";
+import {RouteComponentProps, useHistory, withRouter} from "react-router";
 import React from "react";
 import GameJoin from "./GameJoin";
 import {GameDataStore, IGameDataStorePayload} from "../../Global/DataStore/GameDataStore";
@@ -15,6 +15,8 @@ import {Support} from "./Components/Support";
 import Grid from "@material-ui/core/Grid";
 import {Sponsor} from "../GameDashboard/SponsorList";
 import Divider from "@material-ui/core/Divider";
+import {ErrorBoundary} from "../../App/ErrorBoundary";
+import CardContent from "@material-ui/core/CardContent";
 
 interface IGameParams
 {
@@ -164,7 +166,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 					</div>
 				)}
 				{!winnerGuid && (
-					<>
+					<ErrorBoundary>
 						{(!started || !(amInGame || amSpectating)) && (
 							<BeforeGame gameId={id} isOwner={isOwner}/>
 						)}
@@ -180,7 +182,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 						{started && amSpectating && (
 							<GamePlaySpectate/>
 						)}
-					</>
+					</ErrorBoundary>
 				)}
 				</div>
 				<Grid style={{marginTop: "5rem"}}>

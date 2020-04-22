@@ -12,7 +12,7 @@
     "@material-ui/lab": "^4.0.0-alpha.40",
     "@material-ui/pickers": "^3.2.9",
     "@material-ui/styles": "^4.9.0",
-    "@sentry/browser": "^5.12.4",
+    "@sentry/browser": "^5.15.5",
     "@svgr/webpack": "4.3.2",
     "@types/classnames": "^2.2.9",
     "@types/jest": "24.0.18",

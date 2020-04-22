@@ -179,7 +179,7 @@ const Errors = () =>
 					{errors.map(e => (
 						<ListItem>
 							<ListItemText>
-								{e.message}<br/>{e.stack}
+								{e.message}
 							</ListItemText>
 						</ListItem>
 					))}

@@ -13,8 +13,13 @@ export abstract class DataStore<TState extends {},
 
 	protected update(data: Partial<TState>)
 	{
-		this._currentState = {...this._currentState, ...data};
+		this._currentState = this.getNewState(data);;
 		this.broadcast();
+	}
+
+	protected getNewState(data: Partial<TState>): TState
+	{
+		return {...this._currentState, ...data};
 	}
 
 	private broadcast()
