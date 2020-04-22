@@ -6,7 +6,7 @@ declare const __VERSION__: number;
 
 const env = typeof __SERVER_ENV__ !== "undefined" ? __SERVER_ENV__ : "local";
 const port = typeof __PORT__ !== "undefined" ? __PORT__ : 5000;
-const version = typeof __VERSION__ !== "undefined" ? __VERSION__ : 0;
+const version = typeof __VERSION__ !== "undefined" ? __VERSION__ : Date.now();
 
 export class Config
 {

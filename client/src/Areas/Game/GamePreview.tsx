@@ -29,7 +29,7 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 
 	const gameData = useDataStore(GameDataStore);
 
-	if(props.id && !gameData.game && gameData.loaded)
+	if(props.id && !gameData.game && gameData.loaded && gameData.hasConnection)
 	{
 		return <Typography>No Game Found</Typography>;
 	}

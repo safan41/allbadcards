@@ -8,6 +8,7 @@ export type WhiteCardMap = { [cardId: number]: IWhiteCard | undefined };
 
 export interface IGameDataStorePayload
 {
+	hasConnection: boolean;
 	loaded: boolean;
 	familyMode: boolean;
 	game: GamePayload | null;
@@ -29,6 +30,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 {
 	private static InitialState: IGameDataStorePayload = {
 		loaded: false,
+		hasConnection: false,
 		familyMode: location.hostname.startsWith("not."),
 		game: null,
 		packs: [],
@@ -67,6 +69,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			connectionOpen = true;
 			console.log(e);
 			this.ws?.send(JSON.stringify(UserDataStore.state));
+
+			this.update({
+				hasConnection: true
+			});
 
 			if (this.state.packs.length === 0)
 			{
@@ -112,6 +118,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	private retry(count = 0)
 	{
+		this.update({
+			hasConnection: false
+		});
+
 		console.log("Lost server connection. Retrying...", count);
 
 		this.initialize();
@@ -137,40 +147,37 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	{
 		let prev = {...this.state};
 
-		const newState = this.getNewState(data);
-
-		// If new state has a game, set loaded to true
-		data.loaded = !!newState.game;
+		super.update(data);
 
 		console.groupCollapsed("[GameDataStore] Update...");
 		console.log("New: ", data);
 		console.log("Prev: ", prev);
-		console.log("Result:", newState);
+		console.log("Result:", this.state);
 		console.groupEnd();
 
 		const meGuid = UserDataStore.state.playerGuid;
 
-		if (prev.game?.buildVersion !== newState.game?.buildVersion)
+		const prevBuildVersion = prev.game?.buildVersion;
+		const newBuildVersion = this.state.game?.buildVersion;
+		if (prevBuildVersion && newBuildVersion && prevBuildVersion !== newBuildVersion)
 		{
 			location.href = location.href + "";
 		}
 
-		if (!deepEqual(prev.game?.roundCards, newState.game?.roundCards))
+		if (!deepEqual(prev.game?.roundCards, this.state.game?.roundCards))
 		{
 			this.loadRoundCards();
 		}
 
-		if (!deepEqual(prev.game?.players[meGuid], newState.game?.players[meGuid]))
+		if (!deepEqual(prev.game?.players[meGuid], this.state.game?.players[meGuid]))
 		{
 			this.loadPlayerCards(meGuid);
 		}
 
-		if (prev.game?.blackCard !== newState.game?.blackCard)
+		if (prev.game?.blackCard !== this.state.game?.blackCard)
 		{
 			this.loadBlackCard();
 		}
-
-		super.update(data);
 	}
 
 	private loadRoundCards()
@@ -204,7 +211,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	private loadBlackCard()
 	{
 		const blackCard = this.state.game?.blackCard;
-		if (blackCard === undefined || blackCard === -1)
+		if ((!blackCard || blackCard === -1) && blackCard !== 0)
 		{
 			return Promise.resolve();
 		}
@@ -235,6 +242,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			.then(data =>
 			{
 				this.update({
+					loaded: true,
 					game: data as GamePayload
 				});
 			})
