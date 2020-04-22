@@ -40,7 +40,6 @@ export const GameSettings = () =>
 
 	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{
-		console.log(event.target);
 		const newPacks = event.target.checked
 			? [...gameData.includedPacks, event.target.name]
 			: gameData.includedPacks.filter(a => a !== event.target.name);

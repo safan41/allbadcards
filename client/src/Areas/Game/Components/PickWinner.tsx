@@ -84,7 +84,7 @@ export const PickWinner: React.FC<IPickWinnerProps> = (
 										Pick Winner
 									</LoadingButton>
 								)}>
-									{roundCardValues[i].map(card => card && (
+									{roundCardValues[i]?.map(card => card && (
 										<>
 											<div dangerouslySetInnerHTML={{__html: sanitize(card)}}/>
 											<Divider style={{margin: "1rem 0"}}/>

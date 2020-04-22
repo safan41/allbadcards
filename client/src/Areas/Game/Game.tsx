@@ -113,7 +113,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 			settings
 		} = this.state.gameData.game ?? {};
 
-		if (!this.state.gameData.game || !this.state.gameData.loaded)
+		if (!this.state.gameData.game || !this.state.gameData.loaded || !this.state.gameData.hasConnection)
 		{
 			return <ContainerProgress/>;
 		}

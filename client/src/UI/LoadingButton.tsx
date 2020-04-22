@@ -47,8 +47,6 @@ export const LoadingButton = React.forwardRef<typeof Button, LoadingButtonProps>
 	const disabledFixed = disabled || isLoading;
 	const fixedStartIcon = isLoading ? <CircularProgress size={14}/> : startIcon;
 
-	console.log(isLoading);
-
 	return (
 		<Button {...rest} startIcon={fixedStartIcon} disabled={disabledFixed}>
 			{children}

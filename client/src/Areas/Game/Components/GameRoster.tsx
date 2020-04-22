@@ -35,7 +35,7 @@ export const GameRoster = () =>
 		UserDataStore.listen(setUserData);
 	}, []);
 
-	if (!gameData.game || !gameData.loaded)
+	if (!gameData.game || !gameData.loaded || !gameData.hasConnection)
 	{
 		return null;
 	}
