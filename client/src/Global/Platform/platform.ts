@@ -53,6 +53,11 @@ export interface GameItem
 	}
 }
 
+export interface GamePayload extends GameItem
+{
+	buildVersion: number;
+}
+
 export interface IBlackCard
 {
 	text: string;
@@ -275,6 +280,11 @@ class _Platform
 				_Platform.doGet<{ card: IWhiteCard }>(`/api/game/get-white-card?cardId=${cardId}`)
 					.then(data =>
 					{
+						if(!data)
+						{
+							reject("Card not found");
+						}
+
 						const card = data.card;
 						this.loadedWhiteCards[cardId] = card;
 						resolve(card);

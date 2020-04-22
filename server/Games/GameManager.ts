@@ -62,6 +62,11 @@ export interface GameItem
 	}
 }
 
+export interface GamePayload extends GameItem
+{
+	buildVersion: number;
+}
+
 interface ICard
 {
 	id: number;
@@ -237,11 +242,16 @@ class _GameManager
 			.map(pg => this.wsClientPlayerMap[pg])
 			.reduce((acc, val) => acc.concat(val), []);
 
+		const gameWithVersion: GamePayload = {
+			...game,
+			buildVersion: Config.Version
+		};
+
 		this.wss.clients.forEach(ws =>
 		{
 			if (wsIds.includes((ws as any).id))
 			{
-				ws.send(GameMessage.send(game));
+				ws.send(GameMessage.send(gameWithVersion));
 			}
 		});
 	}

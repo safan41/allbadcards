@@ -14,8 +14,10 @@
     "build-client": "cd client && yarn build",
     "build-server": "node server/scripts/build.js -serverenv=prod",
     "build-server-beta": "node server/scripts/build.js -serverenv=beta",
+    "build-server-local": "node server/scripts/build.js -serverenv=local",
     "build": "yarn clean && yarn build-client && yarn build-server",
     "build-beta": "yarn clean && yarn build-client && yarn build-server-beta",
+    "build-local": "yarn clean && yarn build-client && yarn build-server-local",
     "finalize": "node server/scripts/finalize.js"
   },
   "author": "",

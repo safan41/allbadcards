@@ -1,5 +1,5 @@
 import {DataStore} from "./DataStore";
-import {GameItem, IBlackCard, IPackDef, IWhiteCard, Platform} from "../Platform/platform";
+import {GameItem, GamePayload, IBlackCard, IPackDef, IWhiteCard, Platform} from "../Platform/platform";
 import {UserDataStore} from "./UserDataStore";
 import deepEqual from "deep-equal";
 import {ArrayFlatten} from "../Utils/ArrayUtils";
@@ -10,7 +10,7 @@ export interface IGameDataStorePayload
 {
 	loaded: boolean;
 	familyMode: boolean;
-	game: GameItem | null;
+	game: GamePayload | null;
 	packs: IPackDef[];
 	includedPacks: string[];
 	includedCardcastPacks: string[];
@@ -87,7 +87,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		this.ws.onmessage = (e) =>
 		{
-			const data = JSON.parse(e.data) as { game: GameItem };
+			const data = JSON.parse(e.data) as { game: GamePayload };
 			if (!this.state.game?.id || data.game.id === this.state.game?.id)
 			{
 				this.update(data);
@@ -137,30 +137,40 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	{
 		let prev = {...this.state};
 
-		super.update(data);
+		const newState = this.getNewState(data);
+
+		// If new state has a game, set loaded to true
+		data.loaded = !!newState.game;
 
 		console.groupCollapsed("[GameDataStore] Update...");
 		console.log("New: ", data);
 		console.log("Prev: ", prev);
-		console.log("Result:", this.state);
+		console.log("Result:", newState);
 		console.groupEnd();
 
 		const meGuid = UserDataStore.state.playerGuid;
 
-		if (!deepEqual(prev.game?.roundCards, this.state.game?.roundCards))
+		if (prev.game?.buildVersion !== newState.game?.buildVersion)
+		{
+			location.href = location.href + "";
+		}
+
+		if (!deepEqual(prev.game?.roundCards, newState.game?.roundCards))
 		{
 			this.loadRoundCards();
 		}
 
-		if (!deepEqual(prev.game?.players[meGuid], this.state.game?.players[meGuid]))
+		if (!deepEqual(prev.game?.players[meGuid], newState.game?.players[meGuid]))
 		{
 			this.loadPlayerCards(meGuid);
 		}
 
-		if (prev.game?.blackCard !== this.state.game?.blackCard)
+		if (prev.game?.blackCard !== newState.game?.blackCard)
 		{
 			this.loadBlackCard();
 		}
+
+		super.update(data);
 	}
 
 	private loadRoundCards()
@@ -225,8 +235,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			.then(data =>
 			{
 				this.update({
-					loaded: true,
-					game: data
+					game: data as GamePayload
 				});
 			})
 			.catch(e =>

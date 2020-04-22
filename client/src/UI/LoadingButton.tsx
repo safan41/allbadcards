@@ -14,16 +14,15 @@ type LoadingButtonTypeMap = ButtonTypeMap<ILoadingButtonProps>;
 
 type LoadingButtonProps = OverrideProps<ExtendButtonBaseTypeMap<LoadingButtonTypeMap>, 'a'> & DefaultComponentProps<LoadingButtonTypeMap>;
 
-export const LoadingButton: React.FC<LoadingButtonProps> = (
-	{
+export const LoadingButton = React.forwardRef<typeof Button, LoadingButtonProps>((props, ref) =>
+{
+	const {
 		children,
-		loading,
 		startIcon,
+		loading,
 		disabled,
 		...rest
-	}
-) =>
-{
+	} = props;
 
 	useEffect(() =>
 	{
@@ -55,4 +54,4 @@ export const LoadingButton: React.FC<LoadingButtonProps> = (
 			{children}
 		</Button>
 	);
-};
+});

@@ -56,13 +56,26 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 
 	return (
 		<GamePreview id={props.id}>
-			<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart}>
-				Start
-			</LoadingButton>
-			<Tooltip arrow title={"A fake player! If he wins, everyone else feels shame. Add up to 10."}>
-				<Button startIcon={<MdAdd/>} variant={"contained"} color={"primary"} onClick={onClickAddRandom} style={{marginLeft: "1rem"}} disabled={!canAddRandom}>
-					AI Player
-				</Button>
+			<Tooltip placement={"top"} arrow title={canStart ? "Start the game!" : "You must have one more human player to start the game."} >
+				<span>
+					<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart} style={{pointerEvents: "auto"}}>
+						Start
+					</LoadingButton>
+				</span>
+			</Tooltip>
+			<Tooltip placement={"top"} arrow title={"A fake player! If he wins, everyone else feels shame. Add up to 10."}>
+				<span>
+					<LoadingButton
+						loading={startLoading}
+						startIcon={<MdAdd/>}
+						variant={"contained"}
+						color={"primary"}
+						onClick={onClickAddRandom}
+						style={{marginLeft: "1rem"}}
+						disabled={!canAddRandom}>
+						AI Player
+					</LoadingButton>
+				</span>
 			</Tooltip>
 			<Divider style={{margin: "3rem 0"}}/>
 			<Typography variant={"h4"}>Settings</Typography>
