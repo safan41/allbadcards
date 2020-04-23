@@ -1,3 +1,4 @@
+require('dotenv').config();
 import express from "express";
 import * as path from "path";
 import compression from "compression";
@@ -9,14 +10,13 @@ import {Config} from "../config/config";
 import {CardManager} from "./Games/CardManager";
 import {CreateGameManager} from "./Games/GameManager";
 import * as Sentry from "@sentry/node";
-import * as https from "https";
-import * as fs from "fs";
-import {logError, logWarning} from "./logger";
 
 // Create the app
 const app = express();
-const port = Config.Port || 5000;
+const port = process.env.port || 5000;
 const clientFolder = path.join(process.cwd(), 'client');
+
+console.log(`Port is ${port}. Version is ${Config.OutputDir}`);
 
 app.use(Sentry.Handlers.requestHandler() as any);
 

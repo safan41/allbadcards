@@ -9,8 +9,8 @@ const entryPath = resolveApp("server/server.ts");
 
 const portEnvMap = {
     local: 5000,
-    prod: 80,
-    beta: 80
+    prod: 8080,
+    beta: 8080
 };
 
 module.exports = (serverEnv, outputDir) => ({
@@ -42,7 +42,8 @@ module.exports = (serverEnv, outputDir) => ({
         new webpack.DefinePlugin({
             __SERVER_ENV__: `\"${serverEnv}\"`,
             __PORT__: portEnvMap[serverEnv],
-            __VERSION__: Date.now()
+            __VERSION__: Date.now(),
+            __OUTPUT_DIR__: JSON.stringify(outputDir)
         })
     ]
 });

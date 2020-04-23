@@ -1,0 +1,9 @@
+{
+  "name": "AllBadCards-Beanstalk-Package",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {},
+  "scripts": {
+    "start": "cd output && node server/server.js"
+  }
+}
