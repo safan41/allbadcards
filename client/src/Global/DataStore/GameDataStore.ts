@@ -57,9 +57,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		}
 
 		const isLocal = !!location.hostname.match("local");
+		const protocol = location.protocol === "http:" ? "ws:" : "wss:";
 		const url = isLocal
 			? `ws://${location.hostname}:8080`
-			: `wss://${location.hostname}`;
+			: `${protocol}//${location.hostname}`;
 
 		this.ws = new WebSocket(url);
 

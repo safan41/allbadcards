@@ -95,7 +95,7 @@ class GameDashboard extends React.Component<Props, State>
 	{
 		return (
 			<Container style={{textAlign: "center"}}>
-				<Typography>the best cards against humanity clone</Typography>
+				<Typography>the best cards against humanity clone!</Typography>
 
 				{GameDataStore.state.familyMode && (
 					<Typography variant={"h4"} style={{marginTop: "1rem"}}>Family-friendly edition!</Typography>
