@@ -112,7 +112,7 @@ export const GameSettings = () =>
 									</Typography>
 								</div>
 								{gameData.packs?.map(pack => (
-									<FormGroup>
+									<FormGroup key={pack.packId}>
 										<FormControlLabel
 											control={
 												<Checkbox

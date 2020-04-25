@@ -8,8 +8,8 @@ import * as http from "http";
 import {Config} from "../../config/config";
 import {ArrayUtils} from "../Utils/ArrayUtils";
 import {RandomPlayerNicknames} from "./RandomPlayers";
-import {logError, logMessage} from "../logger";
-import {createClient, RedisClient} from "redis";
+import {logError, logMessage, logWarning} from "../logger";
+import {AbortError, createClient, RedisClient, RetryStrategy, RetryStrategyOptions} from "redis";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -90,6 +90,7 @@ class _GameManager
 	private wss: WebSocket.Server;
 	private redisPub: RedisClient;
 	private redisSub: RedisClient;
+	private redisReconnectInterval: NodeJS.Timeout | null  = null;
 
 	// key = playerGuid, value = WS key
 	private wsClientPlayerMap: { [key: string]: string[] } = {};
@@ -120,16 +121,56 @@ class _GameManager
 		const redisHost = keys.redisHost[Config.Environment];
 		const redisPort = keys.redisPort;
 
+		const retry_strategy: RetryStrategy = options => {
+			if (options.error && options.error.code === "ECONNREFUSED") {
+				// End reconnecting on a specific error and flush all commands with
+				// a individual error
+				return new Error("The server refused the connection");
+			}
+			if (options.total_retry_time > 1000 * 60 * 60) {
+				// End reconnecting after a specific timeout and flush all commands
+				// with a individual error
+				return new Error("Retry time exhausted");
+			}
+			if (options.attempt > 10) {
+				// End reconnecting with built in error
+				return new Error("Too many retries");
+			}
+			// reconnect after
+			return Math.min(options.attempt * 100, 3000);
+		};
+
+		const onError = (error: any) => {
+			if(error instanceof AbortError)
+			{
+				this.redisReconnectInterval && clearInterval(this.redisReconnectInterval);
+				this.redisReconnectInterval = setInterval(() => {
+					logWarning("Attempting to reconnect to Redis...");
+					this.initializeRedis();
+				}, 10000);
+			}
+			logError(`Error from pub/sub: `, error);
+		};
+
 		this.redisPub = createClient({
 			host: redisHost,
-			port: redisPort
+			port: redisPort,
+			auth_pass: keys.redisKey,
+			retry_strategy
 		});
+
+		this.redisPub.on("error", onError);
+		this.redisPub.on("connect", () => this.redisReconnectInterval && clearInterval(this.redisReconnectInterval));
 
 		this.redisSub = createClient({
 			host: redisHost,
-			port: redisPort
+			port: redisPort,
+			auth_pass: keys.redisKey,
+			retry_strategy
 		});
 
+		this.redisSub.on("error", onError);
+		this.redisSub.on("connect", () => this.redisReconnectInterval && clearInterval(this.redisReconnectInterval));
 		this.redisSub.on("message", async (channel, gameDataString) =>
 		{
 			const gameItem = JSON.parse(gameDataString) as GameItem;

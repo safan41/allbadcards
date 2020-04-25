@@ -65,7 +65,7 @@ export const GameRoster = () =>
 					const isSelf = pg === userData.playerGuid;
 
 					return (
-						<>
+						<React.Fragment key={pg}>
 							<ListItem>
 								<ListItemAvatar>
 									<Avatar>
@@ -90,7 +90,7 @@ export const GameRoster = () =>
 								)}
 							</ListItem>
 							<Divider/>
-						</>
+						</React.Fragment>
 					)
 				})}
 			</List>

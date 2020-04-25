@@ -143,16 +143,32 @@ const App: React.FC = () =>
 						</CardMedia>
 						<CardContent style={{paddingTop: 0}}>
 							<ErrorBoundary>
-							<Routes/>
+								<Routes/>
 							</ErrorBoundary>
 						</CardContent>
 					</Container>
 					<div style={{textAlign: "center", padding: "0.5rem 0"}}>
 						<ButtonGroup style={{margin: "1rem 0 2rem"}}>
-							<Button size={"small"} color={"primary"} variant={"outlined"} startIcon={<MdBugReport/>} component={p => <a {...p} href={bugReportUrl} target={"_blank"} rel={"noreferrer nofollow"}/>}>
+							<Button
+								size={"small"}
+								color={"primary"}
+								variant={"outlined"}
+								href={bugReportUrl}
+								target={"_blank"}
+								rel={"noreferrer nofollow"}
+								startIcon={<MdBugReport/>}
+							>
 								Report a Bug
 							</Button>
-							<Button size={"small"} color={"primary"} variant={"outlined"} startIcon={<TiLightbulb/>} component={p => <a {...p} href={featureRequestUrl} target={"_blank"} rel={"noreferrer nofollow"}/>}>
+							<Button
+								size={"small"}
+								color={"primary"}
+								variant={"outlined"}
+								startIcon={<TiLightbulb/>}
+								href={featureRequestUrl}
+								target={"_blank"}
+								rel={"noreferrer nofollow"}
+							>
 								Feature Idea
 							</Button>
 						</ButtonGroup>
