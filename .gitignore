@@ -7,3 +7,5 @@
 /combined.log
 /error.log
 /config/keys.json
+**/keys.json
+keys.json
