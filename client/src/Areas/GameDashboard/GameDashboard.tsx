@@ -133,7 +133,7 @@ class GameDashboard extends React.Component<Props, State>
 					title={"Please enter your nickname:"}
 				/>
 				<div>
-					<SponsorList/>
+					<SponsorList familyMode={GameDataStore.state.familyMode}/>
 				</div>
 
 				<Paper style={{padding: "1rem", margin: "3rem 0 1rem", textAlign: "left"}}>

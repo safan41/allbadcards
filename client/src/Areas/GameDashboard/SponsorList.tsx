@@ -5,6 +5,10 @@ import {Typography} from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import {Platform} from "../../Global/Platform/platform";
 import Tooltip from "@material-ui/core/Tooltip";
+import Card from "@material-ui/core/Card";
+import CardMedia from "@material-ui/core/CardMedia";
+import CardContent from "@material-ui/core/CardContent";
+import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 
 const useStyles = makeStyles({
 	callout: {
@@ -58,9 +62,10 @@ interface ISponsor
 	url: string;
 	src: string;
 	byline: string;
+	familyOnly: boolean;
 }
 
-export const SponsorList = () =>
+export const SponsorList = (props: {familyMode: boolean}) =>
 {
 	const classes = useStyles();
 
@@ -68,22 +73,34 @@ export const SponsorList = () =>
 		{
 			src: "/sponsors/carepod.png",
 			byline: "🐾 Need a vacay to fly away with our pets 🐶",
-			url: "https://flycarepod.link/games"
+			url: "https://flycarepod.link/games",
+			familyOnly: false
 		},
 		{
 			src: "/sponsors/songsaga.png",
 			url: "https://song-saga.com",
-			byline: "The music and story game that rocks 🤘"
+			byline: "The music and story game that rocks 🤘",
+			familyOnly: false
 		},
 		{
 			byline: "Comprehensive Solutions for SMB",
 			url: "https://www.concentricsolvesit.com/",
-			src: "/sponsors/concentric-it-solutions.png"
+			src: "/sponsors/concentric-it-solutions.png",
+			familyOnly: false
 		},
-		undefined,
+		{
+			byline: "🌿 Earth-friendly products for body & bath 🌼",
+			url: "https://www.justlikejane.com/?source=abc",
+			src: "/sponsors/justlikejane.jpg",
+			familyOnly: true
+		},
 		undefined,
 		undefined
 	];
+
+	const sponsorsToUse = props.familyMode
+		? sponsors
+		: sponsors.map(a => a?.familyOnly ? undefined : a)
 
 	return (
 		<>
@@ -103,9 +120,27 @@ export const SponsorList = () =>
 			</div>
 			<Grid className={classes.sponsors}>
 				<Sponsor sponsor={undefined} isDiamondSponsor={true}/>
-				{sponsors.map(s =>
+
+				{sponsorsToUse.map(s =>
 					<Sponsor key={s?.url} sponsor={s}/>
 				)}
+
+				<div style={{width: "100%"}}>
+					<a href={"https://www.senahugheslauer.com/?source=abc"} style={{textDecoration: "none"}} target={"_blank"} onClick={() => Platform.trackEvent("sponsor-click", "sena")}>
+						<Card style={{maxWidth: "30rem", margin: "4rem auto 0"}} elevation={7}>
+							<CardMedia style={{paddingTop: "22.66667%"}} image={"/sponsors/shl.png"}/>
+							<CardContent>
+								<Typography>
+									<div style={{color: "blue"}}>
+										senahugheslauer.com
+									</div>
+									My sister, without whom this site would not exist (it was her idea), is a communications
+									consultant who can make your business shine. Here's her site so you can hire her, because she rocks.
+								</Typography>
+							</CardContent>
+						</Card>
+					</a>
+				</div>
 			</Grid>
 		</>
 	);
