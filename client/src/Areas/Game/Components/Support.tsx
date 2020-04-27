@@ -44,6 +44,7 @@ export const Support = () =>
 		}}>
 			<Typography variant={"h5"}>Did you enjoy the game? One dude made this site and it runs on donations!</Typography>
 			{thankYouButton}
+			<div style={{marginTop: "3rem"}}>Contributions support the site costs, development, and my coffee fund :)</div>
 		</div>
 	);
 };

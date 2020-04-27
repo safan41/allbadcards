@@ -13,8 +13,10 @@ import Tooltip from "@material-ui/core/Tooltip";
 import {PickWinner} from "./Components/PickWinner";
 import Chip from "@material-ui/core/Chip";
 import {AiFillCrown} from "react-icons/all";
-import CircularProgress from "@material-ui/core/CircularProgress";
 import {LoadingButton} from "../../UI/LoadingButton";
+import {CardId} from "../../Global/Platform/Contract";
+import {BrowserUtils} from "../../Global/Utils/BrowserUtils";
+import {ClockLoader} from "react-spinners";
 
 interface IGamePlayWhiteProps
 {
@@ -32,7 +34,7 @@ interface IGamePlayWhiteState
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
 	didForfeit: boolean;
-	pickedCards: number[];
+	pickedCards: CardId[];
 	canUseMyCardsSuck: boolean;
 	suckButtonLoading: boolean,
 	playButtonLoading: boolean,
@@ -122,9 +124,11 @@ export class GamePlayWhite extends React.Component<Props, State>
 			.finally(() => this.setState({
 				playButtonLoading: false
 			}));
+
+		BrowserUtils.scrollToTop();
 	};
 
-	private onPickUpdate = (pickedCards: number[]) =>
+	private onPickUpdate = (pickedCards: CardId[]) =>
 	{
 		this.setState({
 			pickedCards
@@ -218,8 +222,8 @@ export class GamePlayWhite extends React.Component<Props, State>
 				/>
 				{roundStarted && remainingPlayers.map(player => (
 					<Chip
-						style={{marginLeft: 3, marginBottom: 3}}
-						avatar={<CircularProgress size={10}/>}
+						style={{marginLeft: 3, marginBottom: 3, paddingLeft: 8}}
+						avatar={<ClockLoader size={15} />}
 						label={player}
 					/>
 				))}
@@ -233,7 +237,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 					{roundStarted &&
                     <Grid item xs={12} sm={6}>
                         <BlackCard>
-							{gameData.blackCardDef?.text}
+							{gameData.blackCardDef?.content}
                         </BlackCard>
                     </Grid>
 					}

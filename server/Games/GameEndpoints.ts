@@ -1,9 +1,10 @@
 import {Express, Response} from "express";
-import {GameItem, GameManager} from "./GameManager";
+import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
 import {logError, logMessage} from "../logger";
 import {Config} from "../../config/config";
+import {GameItem, ICardPackSummary} from "./Contract";
 
 const cache = apicache.middleware;
 
@@ -44,9 +45,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.query);
 		try
 		{
-			const card = CardManager.getWhiteCard(parseInt(req.query.cardId));
+			const card = await CardManager.getWhiteCard({
+				cardIndex: parseInt(req.query.cardIndex),
+				packId: req.query.packId
+			});
 
-			res.send({card});
+			res.send({
+				card
+			});
 		}
 		catch (error)
 		{
@@ -58,16 +64,38 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 	{
 		try
 		{
-			const packIds = CardManager.packOrder;
+			let packIds: string[];
+			const which = req.query.type;
+			switch (which)
+			{
+				case "all":
+					packIds = CardManager.packTypeDefinition.types.reduce((acc, type) => {
+						acc.push(...type.packs);
+						return acc;
+					}, [] as string[]);
+					break;
+				case "official":
+					packIds = CardManager.packTypeDefinition.types[0].packs;
+					break;
+				case "thirdParty":
+					packIds = CardManager.packTypeDefinition.types[1].packs;
+					break;
+				case "family":
+					packIds = ["family_edition"];
+					break;
+				default:
+					throw new Error("No pack type " + which + " exists!");
+			}
+
 			const packs = packIds.map(packId =>
 			{
 				const packDef = CardManager.packs[packId];
 				return {
-					packId,
-					packName: packDef.name,
-					blackCount: packDef.black.length,
-					whiteCount: packDef.white.length
-				}
+					name: packDef.pack.name,
+					quantity: packDef.quantity,
+					isOfficial: CardManager.packTypeDefinition.types[0].packs.includes(packId),
+					packId
+				} as ICardPackSummary
 			});
 			res.send(packs);
 		}
@@ -82,7 +110,10 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.query);
 		try
 		{
-			const card = CardManager.getBlackCard(parseInt(req.query.cardId));
+			const card = await CardManager.getBlackCard({
+				packId: req.query.packId,
+				cardIndex: parseInt(req.query.cardIndex)
+			});
 
 			res.send(card);
 		}

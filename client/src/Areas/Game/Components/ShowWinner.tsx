@@ -98,7 +98,7 @@ export class ShowWinner extends React.Component<Props, State>
 		const game = this.state.gameData.game;
 		const lastWinner = game?.lastWinner;
 		const winnerCardIds = lastWinner?.whiteCardIds ?? [];
-		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId]);
+		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId][cardId.cardIndex]);
 		if (!lastWinner || !game || winnerCards.length === 0)
 		{
 			return null;

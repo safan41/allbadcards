@@ -1,67 +1,10 @@
 import {ErrorDataStore} from "../DataStore/ErrorDataStore";
 import ReactGA from "react-ga";
-
-type PlayerMap = { [key: string]: GamePlayer };
-
-export interface IPackDef
-{
-	packId: string;
-	packName: string;
-	blackCount: number;
-	whiteCount: number;
-}
-
-export interface GamePlayer
-{
-	guid: string;
-	nickname: string;
-	wins: number;
-	whiteCards: number[];
-	isSpectating: boolean;
-	isRandom: boolean;
-}
-
-export interface GameItem
-{
-	id: string;
-	roundIndex: number;
-	roundStarted: boolean;
-	ownerGuid: string;
-	chooserGuid: string | null;
-	started: boolean;
-	dateCreated: Date;
-	public: boolean;
-	players: PlayerMap;
-	spectators: PlayerMap;
-	blackCard: number;
-	// key = player guid, value = white card ID
-	roundCards: { [key: string]: number[] };
-	playerOrder: string[];
-	usedBlackCards: number[];
-	usedWhiteCards: number[];
-	revealIndex: number;
-	lastWinner: {
-		playerGuid: string;
-		whiteCardIds: number[];
-	} | undefined;
-	settings: {
-		password: string | null;
-		roundsToWin: number;
-		inviteLink: string | null;
-		includedPacks: string[];
-		includedCardcastPacks: string[];
-	}
-}
+import {CardId, GameItem, IBlackCardDefinition, ICardPackSummary} from "./Contract";
 
 export interface GamePayload extends GameItem
 {
 	buildVersion: number;
-}
-
-export interface IBlackCard
-{
-	text: string;
-	pick: number;
 }
 
 export type IWhiteCard = string;
@@ -70,7 +13,7 @@ class _Platform
 {
 	public static Instance = new _Platform();
 
-	private loadedWhiteCards: { [cardId: string]: IWhiteCard } = {};
+	private loadedWhiteCards: { [packId: string]: IWhiteCard[] } = {};
 
 	public trackEvent(action: string, label?: string, value?: number)
 	{
@@ -180,7 +123,7 @@ class _Platform
 		});
 	}
 
-	public async playCards(gameId: string, playerGuid: string, cardIds: number[])
+	public async playCards(gameId: string, playerGuid: string, cardIds: CardId[])
 	{
 		this.trackEvent("play-cards", gameId);
 
@@ -191,7 +134,7 @@ class _Platform
 		});
 	}
 
-	public async forfeit(gameId: string, playerGuid: string, playedCards: number[])
+	public async forfeit(gameId: string, playerGuid: string, playedCards: CardId[])
 	{
 		this.trackEvent("my-cards-suck", gameId);
 
@@ -267,17 +210,22 @@ class _Platform
 		});
 	}
 
-	public async getWhiteCard(cardId: number)
+	public async getWhiteCard(cardId: CardId)
 	{
+		const {
+			cardIndex,
+			packId
+		} = cardId;
+
 		return new Promise<IWhiteCard>((resolve, reject) =>
 		{
-			if (cardId in this.loadedWhiteCards)
+			if (packId in this.loadedWhiteCards && this.loadedWhiteCards[packId].length > cardIndex)
 			{
-				resolve(this.loadedWhiteCards[cardId]);
+				resolve(this.loadedWhiteCards[packId][cardIndex]);
 			}
 			else
 			{
-				_Platform.doGet<{ card: IWhiteCard }>(`/api/game/get-white-card?cardId=${cardId}`)
+				_Platform.doGet<{ card: IWhiteCard }>(`/api/game/get-white-card?packId=${packId}&cardIndex=${cardIndex}`)
 					.then(data =>
 					{
 						if(!data)
@@ -286,7 +234,8 @@ class _Platform
 						}
 
 						const card = data.card;
-						this.loadedWhiteCards[cardId] = card;
+						this.loadedWhiteCards[packId] = this.loadedWhiteCards[packId] ?? {};
+						this.loadedWhiteCards[packId][cardIndex] = card;
 						resolve(card);
 					})
 					.catch(e => reject(e));
@@ -294,21 +243,21 @@ class _Platform
 		})
 	}
 
-	public async getBlackCard(cardId: number)
+	public async getBlackCard(cardId: CardId)
 	{
-		return _Platform.doGet<IBlackCard>(`/api/game/get-black-card?cardId=${cardId}`);
+		return _Platform.doGet<IBlackCardDefinition>(`/api/game/get-black-card?packId=${cardId.packId}&cardIndex=${cardId.cardIndex}`);
 	}
 
-	public async getWhiteCards(cardIds: number[])
+	public async getWhiteCards(cards: CardId[])
 	{
-		const promises = cardIds.map(cardId => this.getWhiteCard(cardId));
+		const promises = cards.map(cardId => this.getWhiteCard(cardId));
 
 		return Promise.all(promises);
 	}
 
-	public async getPacks()
+	public async getPacks(type: "all" | "official" | "thirdParty" | "family" = "all")
 	{
-		return _Platform.doGet<IPackDef[]>("/api/game/get-packnames");
+		return _Platform.doGet<ICardPackSummary[]>("/api/game/get-packnames?type=" + type);
 	}
 }
 

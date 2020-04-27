@@ -3,9 +3,9 @@ import {RouteComponentProps, withRouter} from "react-router";
 import {Button} from "@material-ui/core";
 import {GameDataStore} from "../Global/DataStore/GameDataStore";
 import {UserDataStore} from "../Global/DataStore/UserDataStore";
-import {GameItem} from "../Global/Platform/platform";
 import * as Sentry from "@sentry/browser";
 import Typography from "@material-ui/core/Typography";
+import {GameItem} from "../Global/Platform/Contract";
 
 interface IErrorBoundaryProps
 {

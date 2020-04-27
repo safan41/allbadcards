@@ -1,5 +1,5 @@
 import * as React from "react";
-import {CircularProgress} from "@material-ui/core";
+import {PropagateLoader} from "react-spinners";
 
 interface IContainerProgressProps
 {
@@ -7,6 +7,7 @@ interface IContainerProgressProps
 
 interface DefaultProps
 {
+	loading: boolean;
 }
 
 type Props = IContainerProgressProps & DefaultProps;
@@ -26,12 +27,21 @@ export class ContainerProgress extends React.Component<Props, State>
 		};
 	}
 
+	public static defaultProps = {
+		loading: true
+	};
+
 	public componentDidMount(): void
 	{
 	}
 
 	public render()
 	{
+		if(!this.props.loading)
+		{
+			return this.props.children;
+		}
+
 		return (
 			<div style={{
 				position: "fixed",
@@ -45,7 +55,7 @@ export class ContainerProgress extends React.Component<Props, State>
 				justifyContent: "center",
 				pointerEvents: "none"
 			}}>
-				<CircularProgress/>
+				<PropagateLoader loading={true}/>
 			</div>
 		);
 	}

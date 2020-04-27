@@ -6,13 +6,15 @@ import {IGameDataStorePayload} from "../../../Global/DataStore/GameDataStore";
 import {IUserData} from "../../../Global/DataStore/UserDataStore";
 import {useState} from "react";
 import sanitize from "sanitize-html";
+import {CardId} from "../../../Global/Platform/Contract";
+import deepEqual from "deep-equal";
 
 interface Props
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
 	targetPicked: number;
-	onPickUpdate: (cards: number[]) => void;
+	onPickUpdate: (cards: CardId[]) => void;
 }
 
 export const WhiteCardHand: React.FC<Props> =
@@ -23,18 +25,18 @@ export const WhiteCardHand: React.FC<Props> =
 		 onPickUpdate
 	 }) =>
 	{
-		const [pickedCards, setPickedCards] = useState<number[]>([]);
+		const [pickedCards, setPickedCards] = useState<CardId[]>([]);
 
-		const onPick = (id: number) =>
+		const onPick = (id: CardId) =>
 		{
 			const newVal = [...pickedCards, id];
 			setPickedCards(newVal);
 			onPickUpdate(newVal);
 		};
 
-		const onUnpick = (id: number) =>
+		const onUnpick = (id: CardId) =>
 		{
-			const newVal = pickedCards.filter(a => a !== id);
+			const newVal = pickedCards.filter(a => !deepEqual(a, id));
 			setPickedCards(newVal);
 			onPickUpdate(newVal);
 		};
@@ -56,7 +58,7 @@ export const WhiteCardHand: React.FC<Props> =
 			return null;
 		}
 
-		const playerCardIds = Object.keys(gameData.playerCardDefs).map(id => parseInt(id));
+		const playerCardIds = me.whiteCards;
 
 		const hasPlayed = userData.playerGuid in roundCards;
 
@@ -64,7 +66,9 @@ export const WhiteCardHand: React.FC<Props> =
 			? []
 			: playerCardIds;
 
-		const renderedDefs = hasPlayed ? gameData.roundCardDefs : gameData.playerCardDefs;
+		const renderedDefs = hasPlayed
+			? gameData.roundCardDefs
+			: gameData.playerCardDefs;
 
 		const metPickTarget = targetPicked <= pickedCards.length;
 
@@ -82,7 +86,7 @@ export const WhiteCardHand: React.FC<Props> =
 				<Grid item xs={12} sm={6} md={4}>
 					{cardId && (
 						<WhiteCard
-							key={cardId}
+							key={cardId.cardIndex+cardId.cardIndex}
 							actions={!hasPlayed && (
 								<>
 									<Button
@@ -104,7 +108,7 @@ export const WhiteCardHand: React.FC<Props> =
 								</>
 							)}
 						>
-							<div dangerouslySetInnerHTML={{__html: sanitize(renderedDefs[cardId] ?? "")}} />
+							<div dangerouslySetInnerHTML={{__html: sanitize(renderedDefs?.[cardId.packId]?.[cardId.cardIndex] ?? "")}} />
 						</WhiteCard>
 					)}
 				</Grid>

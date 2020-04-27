@@ -3,7 +3,7 @@ import {FaPlus, MdArrowForward} from "react-icons/all";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, withRouter} from "react-router";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
-import {GameItem, Platform} from "../../Global/Platform/platform";
+import {Platform} from "../../Global/Platform/platform";
 import {IUserData, UserDataStore} from "../../Global/DataStore/UserDataStore";
 import {NicknameDialog} from "../../UI/NicknameDialog";
 import Container from "@material-ui/core/Container";
@@ -15,6 +15,7 @@ import {Divider, Grid} from "@material-ui/core";
 import {TwitterTimelineEmbed} from "react-twitter-embed";
 import {LoadingButton} from "../../UI/LoadingButton";
 import Hidden from "@material-ui/core/Hidden";
+import {GameItem} from "../../Global/Platform/Contract";
 
 interface IGameDashboardProps extends RouteComponentProps
 {

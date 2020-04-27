@@ -1,5 +1,5 @@
 import React, {ChangeEvent, useState} from "react";
-import {Slider, TextField, Typography} from "@material-ui/core";
+import {LinearProgress, Slider, TextField, Typography} from "@material-ui/core";
 import {useDataStore} from "../../../Global/Utils/HookUtils";
 import {GameDataStore} from "../../../Global/DataStore/GameDataStore";
 import Checkbox from "@material-ui/core/Checkbox";
@@ -15,17 +15,20 @@ import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import Divider from "@material-ui/core/Divider";
 import makeStyles from "@material-ui/styles/makeStyles/makeStyles";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
 
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 
 const useStyles = makeStyles({
 	whiteBox: {
-		marginLeft: 20,
 		height: "1rem",
 		border: "1px solid black",
 		padding: 5
 	},
 	blackBox: {
+		marginLeft: 20,
 		padding: 5,
 		height: "1rem",
 		background: "black",
@@ -37,6 +40,7 @@ const useStyles = makeStyles({
 export const GameSettings = () =>
 {
 	const gameData = useDataStore(GameDataStore);
+	const [cardCastDeckCode, setCardCastDeckCode] = useState("");
 
 	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{
@@ -48,7 +52,7 @@ export const GameSettings = () =>
 
 	const selectDefault = () =>
 	{
-		GameDataStore.setIncludedPacks(gameData.packs?.slice(0, 20).map(p => p.packId));
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...GameDataStore.getDefaultPacks(gameData.packs)])));
 	};
 
 	const selectAll = () =>
@@ -63,12 +67,35 @@ export const GameSettings = () =>
 
 	const selectOfficial = () =>
 	{
-		GameDataStore.setIncludedPacks(gameData.packs?.slice(0, 31).map(p => p.packId));
+		const packs = gameData.packs
+			?.filter(pack => pack.isOfficial)
+			?.map(pack => pack.packId);
+
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
+	};
+
+	const onAddCardCastDeck = () =>
+	{
+		if (cardCastDeckCode.length !== 5)
+		{
+			return;
+		}
+
+		if (!gameData.includedCardcastPacks?.includes(cardCastDeckCode))
+		{
+			GameDataStore.setIncludedCardcastPacks([...gameData.includedCardcastPacks, cardCastDeckCode]);
+		}
+
+		setCardCastDeckCode("");
 	};
 
 	const selectThirdParty = () =>
 	{
-		GameDataStore.setIncludedPacks(gameData.packs?.slice(32).map(p => p.packId));
+		const packs = gameData.packs
+			?.filter(pack => !pack.isOfficial)
+			?.map(pack => pack.packId);
+
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
 	};
 
 	const classes = useStyles();
@@ -94,18 +121,18 @@ export const GameSettings = () =>
 						<ExpansionPanelSummary
 							expandIcon={<ExpandMore/>}
 						>
-							<Typography>Card Packs</Typography>
+							<Typography>Base Card Packs</Typography>
 						</ExpansionPanelSummary>
 						<ExpansionPanelDetails>
 							<FormControl component="fieldset">
 								<Divider style={{marginBottom: "1rem"}}/>
 								<div>
 									<ButtonGroup orientation={mobile ? "vertical" : "horizontal"}>
-										<Button onClick={selectDefault}>Default</Button>
 										<Button onClick={selectAll}>All</Button>
 										<Button onClick={selectNone}>None</Button>
-										<Button onClick={selectOfficial}>Official Only</Button>
-										<Button onClick={selectThirdParty}>Third-Party Only</Button>
+										<Button onClick={selectDefault}>+ Suggested</Button>
+										<Button onClick={selectOfficial}>+ Official Packs</Button>
+										<Button onClick={selectThirdParty}>+ Third-Party Packs</Button>
 									</ButtonGroup>
 									<Typography style={{padding: "1rem 0"}}>
 										<strong>{gameData.includedPacks?.length ?? 0}</strong> packs selected
@@ -123,9 +150,12 @@ export const GameSettings = () =>
 											}
 											label={
 												<div>
-													<span>{pack.packName}</span>
-													<span className={classes.whiteBox}>{pack.whiteCount}</span>
-													<span className={classes.blackBox}>{pack.blackCount}</span>
+													<span>
+														{!pack.isOfficial && <small style={{fontSize: "0.75em", verticalAlign: "middle"}}>[Third-Party] </small>}
+														{pack.name}
+													</span>
+													<span className={classes.blackBox}>{pack.quantity.black}</span>
+													<span className={classes.whiteBox}>{pack.quantity.white}</span>
 												</div>
 											}
 										/>
@@ -135,6 +165,42 @@ export const GameSettings = () =>
 						</ExpansionPanelDetails>
 					</ExpansionPanel>
 				)}
+				<ExpansionPanel>
+					<ExpansionPanelSummary
+						expandIcon={<ExpandMore/>}
+					>
+						<Typography>Custom Card Packs</Typography>
+					</ExpansionPanelSummary>
+					<ExpansionPanelDetails style={{display: "block"}}>
+						<Typography variant={"caption"}>
+							Custom packs come from <a href={"https://www.cardcastgame.com/browse"} target={"_blank"}>CardCast</a>'s massive card database
+						</Typography>
+						<div style={{marginTop: "2rem"}}>
+							<TextField value={cardCastDeckCode} size={"small"} onChange={e => setCardCastDeckCode(e.target.value)} id="outlined-basic" label="CardCast Deck Code" variant="outlined"/>
+							<Button onClick={onAddCardCastDeck} disabled={cardCastDeckCode.length !== 5}>Add Deck</Button>
+						</div>
+
+						<List>
+							{gameData.includedCardcastPacks?.map(packId =>
+							{
+								const packDef = gameData.cardcastPackDefs[packId];
+								if (!packDef)
+								{
+									return null;
+								}
+
+								return (
+									<ListItem>
+										<ListItemText>{packDef.name}</ListItemText>
+									</ListItem>
+								);
+							})}
+						</List>
+						{gameData.cardcastPacksLoading && (
+							<LinearProgress color="primary" />
+						)}
+					</ExpansionPanelDetails>
+				</ExpansionPanel>
 			</div>
 		</div>
 	);
@@ -176,9 +242,11 @@ const SliderField = () =>
 {
 	const gameData = useDataStore(GameDataStore);
 
-	const onChange = (e: ChangeEvent<{}>, v: number | number[]) => {
+	const onChange = (e: ChangeEvent<{}>, v: number | number[]) =>
+	{
 		clearTimeout(sliderTimeout);
-		sliderTimeout = window.setTimeout(() => {
+		sliderTimeout = window.setTimeout(() =>
+		{
 			GameDataStore.setRequiredRounds(v as number)
 		}, 500);
 	};

@@ -1,10 +1,16 @@
 import {DataStore} from "./DataStore";
-import {GameItem, GamePayload, IBlackCard, IPackDef, IWhiteCard, Platform} from "../Platform/platform";
+import {GamePayload, IWhiteCard, Platform} from "../Platform/platform";
 import {UserDataStore} from "./UserDataStore";
 import deepEqual from "deep-equal";
 import {ArrayFlatten} from "../Utils/ArrayUtils";
+import {CardCastApi, IDeck} from "isomorphic-cardcast-api";
+import {CardId, IBlackCardDefinition, ICardPackSummary} from "../Platform/Contract";
 
-export type WhiteCardMap = { [cardId: number]: IWhiteCard | undefined };
+export type WhiteCardMap = {
+	[packId: string]: {
+		[cardIndex: number]: IWhiteCard
+	}
+};
 
 export interface IGameDataStorePayload
 {
@@ -12,15 +18,17 @@ export interface IGameDataStorePayload
 	loaded: boolean;
 	familyMode: boolean;
 	game: GamePayload | null;
-	packs: IPackDef[];
+	packs: ICardPackSummary[];
 	includedPacks: string[];
 	includedCardcastPacks: string[];
+	cardcastPackDefs: { [key: string]: IDeck };
+	cardcastPacksLoading: boolean;
 	roundCardDefs: WhiteCardMap;
 	playerCardDefs: WhiteCardMap;
 	roundsRequired: number;
 	password: string | null;
 	inviteLink: string | null;
-	blackCardDef: IBlackCard | null;
+	blackCardDef: IBlackCardDefinition | null;
 }
 
 let manualClose = false;
@@ -38,7 +46,9 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		playerCardDefs: {},
 		includedPacks: [],
 		includedCardcastPacks: [],
-		roundsRequired: 8,
+		cardcastPackDefs: {},
+		cardcastPacksLoading: false,
+		roundsRequired: 7,
 		password: null,
 		blackCardDef: null,
 		inviteLink: null
@@ -77,12 +87,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 			if (this.state.packs.length === 0)
 			{
-				Platform.getPacks()
+				Platform.getPacks(this.state.familyMode ? "family" : undefined)
 					.then(data =>
 					{
-						const defaultPacks = this.state.familyMode
-							? [data[1].packId]
-							: data.slice(0, 20).map(p => p.packId);
+						const defaultPacks = this.getDefaultPacks(data);
 
 						this.update({
 							packs: data,
@@ -109,6 +117,13 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 				this.retry();
 			}
 		};
+	}
+
+	public getDefaultPacks(packs: ICardPackSummary[])
+	{
+		return packs.filter(a => !a.packId.match(/pax|conversion|gencon|mass_effect|midterm|house_of_cards|jack_white|hawaii|desert_bus|reject/gi)
+			&& a.isOfficial
+		).map(p => p.packId);
 	}
 
 	public clear()
@@ -212,7 +227,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	private loadBlackCard()
 	{
 		const blackCard = this.state.game?.blackCard;
-		if ((!blackCard || blackCard === -1) && blackCard !== 0)
+		if ((!blackCard || blackCard.cardIndex === -1) && blackCard?.cardIndex !== 0)
 		{
 			return Promise.resolve();
 		}
@@ -223,14 +238,23 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			}));
 	}
 
-	private async loadWhiteCardMap(cardIds: number[]): Promise<WhiteCardMap>
+	private async loadWhiteCardMap(cardIds: CardId[]): Promise<WhiteCardMap>
 	{
 		const data = await Platform.getWhiteCards(cardIds);
-		const map = cardIds.reduce((acc, cardId, i) =>
+
+		let map: WhiteCardMap = {};
+		data.forEach((cardDef, index) =>
 		{
-			acc[cardId] = data[i];
-			return acc;
-		}, {} as WhiteCardMap);
+			const cardId = cardIds[index];
+			if (!(cardId.packId in map))
+			{
+				map[cardId.packId] = {};
+			}
+
+			map[cardId.packId][cardId.cardIndex] = cardDef;
+		});
+
+		console.log(map);
 
 		return map;
 	}
@@ -256,7 +280,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			});
 	}
 
-	public playWhiteCards(cardIds: number[] | undefined, userGuid: string)
+	public playWhiteCards(cardIds: CardId[] | undefined, userGuid: string)
 	{
 		console.log("[GameDataStore] Played white cards...", cardIds, userGuid);
 
@@ -333,6 +357,39 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public setIncludedCardcastPacks(includedCardcastPacks: string[])
 	{
+		const newPacks = includedCardcastPacks.filter(p => !this.state.includedCardcastPacks.includes(p));
+
+		if(newPacks.length > 0)
+		{
+			this.update({
+				cardcastPacksLoading: true
+			});
+		}
+
+		let loaded = 0;
+		newPacks.forEach(pack =>
+		{
+			CardCastApi.getDeck(pack)
+				.then(packData =>
+				{
+					this.update({
+						cardcastPackDefs: {
+							...this.state.cardcastPackDefs,
+							[pack]: packData
+						}
+					});
+				})
+				.finally(() => {
+					loaded++;
+					if(loaded === newPacks.length)
+					{
+						this.update({
+							cardcastPacksLoading: false
+						});
+					}
+				});
+		});
+
 		this.update({
 			includedCardcastPacks
 		});
@@ -380,13 +437,13 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			throw new Error("Invalid card or game!");
 		}
 
-		const toPlay: number[] = [];
+		const toPlay: CardId[] = [];
 		const myCards = game.players[playerGuid].whiteCards;
 		while (toPlay.length < cardsNeeded)
 		{
 			let cardIndex = Math.floor(Math.random() * myCards.length);
 			const card = myCards[cardIndex];
-			if (!toPlay.includes(card))
+			if (!toPlay.find(a => deepEqual(card, a)))
 			{
 				toPlay.push(card);
 			}

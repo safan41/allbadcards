@@ -51,14 +51,16 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 	const playerGuids = Object.keys(gameData.game?.players ?? {});
 	const randomPlayers = playerGuids.filter(pg => players[pg]?.isRandom) ?? [];
 	const nonRandomPlayers = playerGuids.filter(pg => !players[pg]?.isRandom) ?? [];
-	const canStart = nonRandomPlayers.length > 1;
 	const canAddRandom = randomPlayers.length < 10;
+	const selectedPacks = [...gameData.includedPacks, ...gameData.includedCardcastPacks];
+	const canStart = nonRandomPlayers.length > 1 && selectedPacks.length > 0;
 
 	return (
 		<GamePreview id={props.id}>
 			<Tooltip placement={"top"} arrow title={canStart ? "Start the game!" : "You must have one more human player to start the game."} >
 				<span>
-					<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart} disabled={!canStart} style={{pointerEvents: "auto"}}>
+					<LoadingButton loading={startLoading} variant={"contained"} color={"primary"} onClick={onClickStart}
+					               disabled={!canStart} style={{pointerEvents: "auto"}}>
 						Start
 					</LoadingButton>
 				</span>
@@ -66,7 +68,7 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 			<Tooltip placement={"top"} arrow title={"A fake player! If he wins, everyone else feels shame. Add up to 10."}>
 				<span>
 					<LoadingButton
-						loading={startLoading}
+						loading={startLoading || randomPlayerLoading}
 						startIcon={<MdAdd/>}
 						variant={"contained"}
 						color={"primary"}

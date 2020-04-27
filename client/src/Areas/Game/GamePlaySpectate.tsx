@@ -5,14 +5,12 @@ import Grid from "@material-ui/core/Grid";
 import {BlackCard} from "../../UI/BlackCard";
 import Divider from "@material-ui/core/Divider";
 import {Typography} from "@material-ui/core";
-import {WhiteCard} from "../../UI/WhiteCard";
 import {RevealWhites} from "./Components/RevealWhites";
 import {ShowWinner} from "./Components/ShowWinner";
-import Button from "@material-ui/core/Button";
 import {PickWinner} from "./Components/PickWinner";
 import Chip from "@material-ui/core/Chip";
 import {AiFillCrown} from "react-icons/all";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import {ClockLoader} from "react-spinners";
 
 interface IGamePlaySpectateProps
 {
@@ -111,8 +109,8 @@ export class GamePlaySpectate extends React.Component<Props, State>
 					/>
 					{roundStarted && remainingPlayers.map(player => (
 						<Chip
-							style={{marginLeft: 3, marginBottom: 3}}
-							avatar={<CircularProgress size={10}/>}
+							style={{marginLeft: 3, marginBottom: 3, paddingLeft: 8}}
+							avatar={<ClockLoader size={15} />}
 							label={player}
 						/>
 					))}
@@ -127,7 +125,7 @@ export class GamePlaySpectate extends React.Component<Props, State>
 					{roundStarted &&
                     <Grid item xs={12} sm={6}>
                         <BlackCard>
-							{gameData.blackCardDef?.text}
+							{gameData.blackCardDef?.content}
                         </BlackCard>
                     </Grid>
 					}

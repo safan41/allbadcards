@@ -9,78 +9,14 @@ import {Config} from "../../config/config";
 import {ArrayUtils} from "../Utils/ArrayUtils";
 import {RandomPlayerNicknames} from "./RandomPlayers";
 import {logError, logMessage, logWarning} from "../logger";
-import {AbortError, createClient, RedisClient, RetryStrategy, RetryStrategyOptions} from "redis";
+import {AbortError, createClient, RedisClient, RetryStrategy} from "redis";
 import * as fs from "fs";
 import * as path from "path";
-
-type PlayerMap = { [key: string]: GamePlayer };
+import {CardId, GameItem, GamePayload, GamePlayer, PlayerMap} from "./Contract";
 
 interface IWSMessage
 {
 	playerGuid: string;
-}
-
-export interface GamePlayer
-{
-	guid: string;
-	nickname: string;
-	wins: number;
-	whiteCards: number[];
-	isSpectating: boolean;
-	isRandom: boolean;
-}
-
-export interface GameItem
-{
-	id: string;
-	roundIndex: number;
-	roundStarted: boolean;
-	ownerGuid: string;
-	chooserGuid: string | null;
-	started: boolean;
-	dateCreated: Date;
-	public: boolean;
-	players: PlayerMap;
-	spectators: PlayerMap;
-	blackCard: number;
-	// key = player guid, value = white card ID
-	roundCards: { [key: string]: number[] };
-	playerOrder: string[];
-	usedBlackCards: number[];
-	usedWhiteCards: number[];
-	revealIndex: number;
-	lastWinner: {
-		playerGuid: string;
-		whiteCardIds: number[];
-	} | undefined;
-	settings: {
-		password: string | null;
-		roundsToWin: number;
-		inviteLink: string | null;
-		includedPacks: string[];
-		includedCardcastPacks: string[];
-	}
-}
-
-export interface GamePayload extends GameItem
-{
-	buildVersion: number;
-}
-
-interface ICard
-{
-	id: number;
-}
-
-interface IBlackCard extends ICard
-{
-	prompt: string;
-	special: string;
-}
-
-interface IWhiteCard extends ICard
-{
-	response: string;
 }
 
 export let GameManager: _GameManager;
@@ -220,7 +156,7 @@ class _GameManager
 
 	}
 
-	private createPlayer(playerGuid: string, nickname: string, isSpectating: boolean, isRandom: boolean): GamePlayer
+	private static createPlayer(playerGuid: string, nickname: string, isSpectating: boolean, isRandom: boolean): GamePlayer
 	{
 		return {
 			guid: playerGuid,
@@ -312,15 +248,18 @@ class _GameManager
 				ownerGuid,
 				chooserGuid: null,
 				dateCreated: new Date(),
-				players: {[ownerGuid]: this.createPlayer(ownerGuid, nickname, false, false)},
+				players: {[ownerGuid]: _GameManager.createPlayer(ownerGuid, nickname, false, false)},
 				playerOrder: [],
 				spectators: {},
 				public: false,
 				started: false,
-				blackCard: -1,
+				blackCard: {
+					cardIndex: -1,
+					packId: ""
+				},
 				roundCards: {},
-				usedBlackCards: [],
-				usedWhiteCards: [],
+				usedBlackCards: {},
+				usedWhiteCards: {},
 				revealIndex: -1,
 				lastWinner: undefined,
 				settings: {
@@ -362,7 +301,7 @@ class _GameManager
 		const newGame = {...existingGame};
 		newGame.revealIndex = -1;
 
-		const newPlayer = this.createPlayer(playerGuid, nickname, isSpectating, isRandom);
+		const newPlayer = _GameManager.createPlayer(playerGuid, nickname, isSpectating, isRandom);
 		if (isSpectating)
 		{
 			newGame.spectators[playerGuid] = newPlayer;
@@ -440,8 +379,7 @@ class _GameManager
 
 		// Grab a new chooser
 		const chooserIndex = newGame.roundIndex % nonRandomPlayerGuids.length;
-		const chooser = nonRandomPlayerGuids[chooserIndex];
-		newGame.chooserGuid = chooser;
+		newGame.chooserGuid = nonRandomPlayerGuids[chooserIndex];
 
 		// Remove the played white card from each player's hand
 		newGame.players = playerGuids.reduce((acc, playerGuid) =>
@@ -462,7 +400,7 @@ class _GameManager
 		newGame = await CardManager.dealWhiteCards(newGame);
 
 		// Grab the new black card
-		newGame = CardManager.nextBlackCard(newGame);
+		newGame = await CardManager.nextBlackCard(newGame);
 
 		await this.updateGame(newGame);
 
@@ -496,8 +434,9 @@ class _GameManager
 		newGame.settings.password = password;
 		newGame.settings.roundsToWin = requiredRounds;
 		newGame.settings.inviteLink = inviteLink;
-		newGame = CardManager.nextBlackCard(newGame);
-		newGame = CardManager.dealWhiteCards(newGame);
+
+		newGame = await CardManager.nextBlackCard(newGame);
+		newGame = await CardManager.dealWhiteCards(newGame);
 
 		await this.updateGame(newGame);
 
@@ -525,13 +464,16 @@ class _GameManager
 		});
 
 		newGame.roundIndex = 0;
-		newGame.usedBlackCards = [];
-		newGame.usedWhiteCards = [];
+		newGame.usedBlackCards = {};
+		newGame.usedWhiteCards = {};
 		newGame.revealIndex = -1;
 		newGame.roundCards = {};
 		newGame.roundStarted = false;
 		newGame.started = false;
-		newGame.blackCard = -1;
+		newGame.blackCard = {
+			cardIndex: -1,
+			packId: ""
+		};
 		newGame.lastWinner = undefined;
 
 		await this.updateGame(newGame);
@@ -539,7 +481,7 @@ class _GameManager
 		return newGame;
 	}
 
-	public async playCard(gameId: string, playerGuid: string, cardIds: number[])
+	public async playCard(gameId: string, playerGuid: string, cardIds: CardId[])
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -552,7 +494,7 @@ class _GameManager
 		return newGame;
 	}
 
-	public async forfeit(gameId: string, playerGuid: string, playedCards: number[])
+	public async forfeit(gameId: string, playerGuid: string, playedCards: CardId[])
 	{
 		const existingGame = await this.getGame(gameId);
 
@@ -561,8 +503,10 @@ class _GameManager
 		// Get the cards they haven't played
 		const unplayedCards = existingGame.players[playerGuid].whiteCards.filter(c => !playedCards.includes(c));
 
-		// Remove the unplayed cards from the used cards list. i.e. put them back in the pool
-		newGame.usedWhiteCards.push(...unplayedCards);
+		unplayedCards.forEach(cardId => {
+			newGame.usedWhiteCards[cardId.packId] = newGame.usedWhiteCards[cardId.packId] ?? {};
+			newGame.usedWhiteCards[cardId.packId][cardId.cardIndex] = cardId;
+		});
 
 		// clear out the player's cards
 		newGame.players[playerGuid].whiteCards = [];
@@ -599,7 +543,7 @@ class _GameManager
 		}
 
 		const newGame = {...existingGame};
-		const newGameWithBlackCard = CardManager.nextBlackCard(newGame);
+		const newGameWithBlackCard = await CardManager.nextBlackCard(newGame);
 
 		await this.updateGame(newGameWithBlackCard);
 
@@ -631,26 +575,22 @@ class _GameManager
 			.then(async existingGame =>
 			{
 				const newGame = {...existingGame};
-				const blackCardDef = CardManager.blackCards[newGame.blackCard];
+				const blackCardDef = await CardManager.getBlackCard(newGame.blackCard);
 				const targetPicked = blackCardDef.pick;
-
 				const randomPlayerGuids = Object.keys(newGame.players).filter(pg => newGame.players[pg].isRandom);
 
-				randomPlayerGuids.forEach(pg =>
+				for(let pg of randomPlayerGuids)
 				{
 					const player = newGame.players[pg];
-					let cards: number[] = [];
+					let cards: CardId[] = [];
 					for (let i = 0; i < targetPicked; i++)
 					{
-						const [pickedCard, newCards] = ArrayUtils.getRandomUnused(player.whiteCards, cards);
+						const [, newCards] = ArrayUtils.getRandomUnused(player.whiteCards, cards);
 						cards = newCards;
 					}
 
-					setTimeout(() =>
-					{
-						this.playCard(gameId, pg, cards);
-					}, Math.floor(Math.random() * 5000));
-				});
+					await this.playCard(gameId, pg, cards);
+				}
 			});
 	}
 

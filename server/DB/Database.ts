@@ -2,6 +2,7 @@ import {MongoClient} from "mongodb";
 import * as fs from "fs";
 import * as path from "path";
 import {Config} from "../../config/config";
+import {format} from "util";
 
 class _Database
 {
@@ -28,9 +29,16 @@ class _Database
 
 	public initialize()
 	{
+		var user = encodeURIComponent('dave');
+		var password = encodeURIComponent('abc123');
+		var authMechanism = 'DEFAULT';
+		var url = format('mongodb://%s:%s@localhost:27017/myproject?authMechanism=%s',
+			user, password, authMechanism);
+
 		MongoClient.connect(this.url, {
 			useNewUrlParser: true,
-			useUnifiedTopology: true
+			useUnifiedTopology: true,
+
 		}, async (err, client) =>
 		{
 			if (err)
@@ -42,7 +50,11 @@ class _Database
 			this._client = client;
 			const db = client.db("letsplaywtf");
 
-			await client.db("letsplaywtf").createIndex("games", {
+			await db.createIndex("games", {
+				id: 1
+			});
+
+			await db.createIndex("cardcast", {
 				id: 1
 			});
 		});

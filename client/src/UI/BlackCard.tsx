@@ -49,7 +49,7 @@ export class BlackCard extends React.Component<Props, State>
 
 	public render()
 	{
-		const children = this.props.children?.replace(/_/g, "_________") ?? "";
+		const children = this.props.children?.replace(/(_){1,}\1/g, "_").replace(/_/g, "_________") ?? "";
 		const sanitized = sanitize(children);
 
 		return (

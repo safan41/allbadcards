@@ -1,112 +1,144 @@
-import {GameItem, GameManager} from "./GameManager";
 import fs from "fs";
 import * as path from "path";
-
-interface BlackCard
-{
-	text: string;
-	pick: number;
-}
-
-type WhiteCard = string;
-
-interface ICardPack
-{
-	name: string;
-	black: number[];
-	white: number[];
-}
+import {CardId, GameItem, ICardPackDefinition, ICardTypes, CardPackMap} from "./Contract";
+import {CardCastConnector} from "./CardCastConnector";
+import deepEqual from "deep-equal";
 
 export class CardManager
 {
-	public static blackCards: BlackCard[];
-	public static whiteCards: WhiteCard[];
-	public static packs: { [key: string]: ICardPack } = {};
-	public static packOrder: string[];
+	public static packTypeDefinition: ICardTypes;
+	public static packs: { [key: string]: ICardPackDefinition } = {};
 
 	public static initialize()
 	{
-		const allCardsPath = path.resolve(process.cwd(), "./server/data/all_cards.json");
-		const allCardsFile = fs.readFileSync(allCardsPath, "utf8");
+		const typesPath = path.resolve(process.cwd(), "./server/data/types.json");
+		const typesFile = fs.readFileSync(typesPath, "utf8");
+		this.packTypeDefinition = JSON.parse(typesFile) as ICardTypes;
 
-		const allCards = JSON.parse(allCardsFile);
-		const packsKeys = Object.keys(allCards).filter(k =>
-			k !== "blackCards"
-			&& k !== "whiteCards"
-			&& k !== "order");
-
-		packsKeys.forEach(k =>
+		this.packTypeDefinition.types.forEach(type =>
 		{
-			this.packs[k] = allCards[k];
+			type.packs.forEach(packForType =>
+			{
+				const packPath = path.resolve(process.cwd(), `./server/data/${type.id}/packs/${packForType}.json`);
+				const packFile = fs.readFileSync(packPath, "utf8");
+				const packDef = JSON.parse(packFile) as ICardPackDefinition;
+				this.packs[packForType] = packDef;
+			});
 		});
-
-		this.packOrder = allCards.order;
-		this.blackCards = allCards.blackCards;
-		this.whiteCards = allCards.whiteCards;
 	}
 
-	private static getAllowedCard(cards: number[], usedCards: number[]): number
+	private static getAllowedCard(allowedCards: CardPackMap, usedCards: CardPackMap): CardId
 	{
-		const allowedCards = cards.filter(a => usedCards.indexOf(a) < 0);
-		const index = Math.floor(Math.random() * allowedCards.length);
-		const newCardId = allowedCards[index];
+		const packKeys = Object.keys(allowedCards);
+		const validPacksIds = packKeys.filter(k => {
+			const totalPackCards = Object.keys(allowedCards[k]).length;
+			const usedPackCards = Object.keys(usedCards[k] ?? {}).length;
+			return usedPackCards < totalPackCards;
+		});
+		const randomPack = Math.floor(Math.random() * validPacksIds.length);
+		const chosenPackId = validPacksIds[randomPack];
+		const pack = allowedCards[chosenPackId];
+		const allowedPackCards = Object.keys(pack)
+			.filter(cardIndex => !Object.keys(usedCards[chosenPackId] ?? {}).includes(cardIndex));
+		const index = Math.floor(Math.random() * allowedPackCards.length);
+		const chosenCardIndex = parseInt(allowedPackCards[index]);
 
-		return newCardId;
+		return {
+			packId: chosenPackId,
+			cardIndex: chosenCardIndex
+		};
 	}
 
-	public static nextBlackCard(gameItem: GameItem)
+	public static async nextBlackCard(gameItem: GameItem)
 	{
-		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) =>
+		let allowedCards: CardPackMap = {};
+		const includedPacks = [...gameItem.settings.includedPacks, ...gameItem.settings.includedCardcastPacks];
+		for (let packId of includedPacks)
 		{
-			const pack = this.packs[packName];
-			acc.push(...pack.black);
-			return acc;
-		}, [] as number[]);
+			const pack = await CardManager.getPack(packId);
+			const cardMap = pack.black.reduce((acc, cardVal, cardIndex) => {
+				acc[cardIndex] = {
+					cardIndex,
+					packId
+				};
 
-		const newCard = this.getAllowedCard(allowedIds, gameItem.usedBlackCards);
+				return acc;
+			}, {} as {[cardIndex: number]: CardId});
+
+			allowedCards[packId] = cardMap;
+		}
+
+		const newCard = this.getAllowedCard(allowedCards, gameItem.usedBlackCards);
 
 		const newGame = {...gameItem};
 		newGame.blackCard = newCard;
-		newGame.usedBlackCards.push(newCard);
+		newGame.usedBlackCards[newCard.packId] = newGame.usedBlackCards[newCard.packId] ?? {};
+		newGame.usedBlackCards[newCard.packId][newCard.cardIndex] = newCard;
 
 		return newGame;
 	}
 
-	public static dealWhiteCards(gameItem: GameItem): GameItem
+	public static async dealWhiteCards(gameItem: GameItem)
 	{
 		const newGame = {...gameItem};
 
-		let usedWhiteCards = [...gameItem.usedWhiteCards];
+		let usedWhiteCards: CardPackMap = {...gameItem.usedWhiteCards};
 
 		const playerKeys = Object.keys(gameItem.players);
 
-		const allWhiteCards = gameItem.settings.includedPacks.reduce((acc, packId) =>
+		let allWhiteCards = gameItem.settings.includedPacks.reduce((acc, packId) =>
 		{
 			const packCount = this.packs[packId].white.length;
 			acc += packCount;
 			return acc;
 		}, 0);
 
-		const availableCardRemainingCount = allWhiteCards - usedWhiteCards.length;
+		if (gameItem.settings.includedCardcastPacks.length > 0)
+		{
+			for (let packId of gameItem.settings.includedCardcastPacks)
+			{
+				const pack = await CardCastConnector.getDeck(packId);
+				const whiteCardsForPack = pack.white;
+				allWhiteCards += whiteCardsForPack.length;
+			}
+		}
+
+		const usedWhiteCardCount = Object.keys(usedWhiteCards).reduce((acc, packId) => {
+			acc += Object.keys(usedWhiteCards[packId]).length;
+			return acc;
+		}, 0);
+
+		const availableCardRemainingCount = allWhiteCards - usedWhiteCardCount;
 
 		// If we run out of white cards, reset them
 		if (availableCardRemainingCount < playerKeys.length)
 		{
-			usedWhiteCards = [];
+			usedWhiteCards = {};
 		}
 
-		const foundBlackCard = this.blackCards[gameItem.blackCard];
+		const blackCardPack = await CardManager.getPack(gameItem.blackCard.packId);
+		const blackCard = blackCardPack.black[gameItem.blackCard.cardIndex];
+		const pick = blackCard.pick;
 
-		const targetHandSize = foundBlackCard?.pick === 3
-			? 12
-			: 10;
+		// Assume the hand size is 10. If pick is more than 1, pick that many more.
+		const targetHandSize = 10 + (pick - 1);
 
-		const allowedIds = gameItem.settings.includedPacks.reduce((acc, packName) =>
+		let allowedCards: CardPackMap = {};
+		const includedPacks = [...gameItem.settings.includedPacks, ...gameItem.settings.includedCardcastPacks];
+		for (let packId of includedPacks)
 		{
-			const pack = this.packs[packName];
-			acc.push(...pack.white);
-			return acc;
-		}, [] as number[]);
+			const pack = await CardManager.getPack(packId);
+			const cardMap = pack.white.reduce((acc, cardVal, cardIndex) => {
+				acc[cardIndex] = {
+					cardIndex,
+					packId
+				};
+
+				return acc;
+			}, {} as {[cardIndex: number]: CardId});
+
+			allowedCards[packId] = cardMap;
+		}
 
 		playerKeys.forEach(playerGuid =>
 		{
@@ -114,8 +146,9 @@ export class CardManager
 
 			while (cards.length < targetHandSize)
 			{
-				const newCard = this.getAllowedCard(allowedIds, usedWhiteCards);
-				usedWhiteCards.push(newCard);
+				const newCard = this.getAllowedCard(allowedCards, usedWhiteCards);
+				usedWhiteCards[newCard.packId] = usedWhiteCards[newCard.packId] ?? {};
+				usedWhiteCards[newCard.packId][newCard.cardIndex] = newCard;
 
 				cards.push(newCard);
 			}
@@ -128,13 +161,28 @@ export class CardManager
 		return newGame;
 	}
 
-	public static getWhiteCard(cardId: number)
+	public static async getWhiteCard(cardId: CardId)
 	{
-		return this.whiteCards[cardId];
+		const pack = await CardManager.getPack(cardId.packId);
+		return pack.white[cardId.cardIndex];
 	}
 
-	public static getBlackCard(cardId: number)
+	public static async getBlackCard(cardId: CardId)
 	{
-		return this.blackCards[cardId];
+		const pack = await CardManager.getPack(cardId.packId);
+		return pack.black[cardId.cardIndex];
+	}
+
+	private static async getPack(packId: string)
+	{
+		const isCardCast = !(packId in this.packs);
+		if (isCardCast)
+		{
+			return await CardCastConnector.getDeck(packId);
+		}
+		else
+		{
+			return this.packs[packId];
+		}
 	}
 }
