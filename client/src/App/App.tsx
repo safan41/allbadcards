@@ -32,6 +32,8 @@ import List from "@material-ui/core/List";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItem from "@material-ui/core/ListItem";
 import {ErrorBoundary} from "./ErrorBoundary";
+import {Alert} from "@material-ui/lab";
+import Snackbar from "@material-ui/core/Snackbar";
 
 const useStyles = makeStyles({
 	logoIcon: {

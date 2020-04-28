@@ -141,10 +141,12 @@ class GameDashboard extends React.Component<Props, State>
 					<Grid container>
 						<Grid item md={7} xs={12}>
 							<Typography>
-								<strong>Updates - 4/21</strong>
-								<li>Implemented scalable server solution (first iteration) to work for more traffic</li>
-								<li>Pick winner screen now randomizes card order</li>
-								<li>Changed code to use AGPL 3.0 license</li>
+								<strong>Updates - 4/27</strong>
+								<li>Added CardCast pack support. You can now add CardCast packs alongside first- and third-party card packs!</li>
+								<li>Refreshed card list with lots of newer official packs and better third-party packs</li>
+								<li>Added round timer to auto-advance if winner does not manually do so.</li>
+								<li>Lots of UI improvements for game settings.</li>
+								<li>Polish for all loaders</li>
 								<br/>
 							</Typography>
 						</Grid>
