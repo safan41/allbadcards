@@ -30,7 +30,9 @@ interface IShowWinnerState
 {
 	gameData: IGameDataStorePayload;
 	userData: IUserData;
-	remaining: number;
+	timeDownStarted: boolean,
+	beforeContinueRemaining: number;
+	autoProceedRemaining: number;
 	roundStartLoading: boolean;
 }
 
@@ -43,7 +45,9 @@ export class ShowWinner extends React.Component<Props, State>
 		this.state = {
 			gameData: GameDataStore.state,
 			userData: UserDataStore.state,
-			remaining: 100,
+			timeDownStarted: false,
+			beforeContinueRemaining: 100,
+			autoProceedRemaining: 100,
 			roundStartLoading: false
 		};
 	}
@@ -57,24 +61,49 @@ export class ShowWinner extends React.Component<Props, State>
 		UserDataStore.listen(data => this.setState({
 			userData: data
 		}));
+	}
 
-		const startTime = Date.now();
-		const animate = () =>
+	private animate = (startTime: number, beforeContinueDelay: number, autoProceedDelay: number) =>
+	{
+		const now = Date.now();
+		const diff = now - startTime;
+		const beforeContinueRemaining = Math.max(0, Math.floor((1 - Math.min(1, diff / beforeContinueDelay)) * 100));
+		const autoProceedRemaining = Math.max(Math.floor((1 - Math.min(1, diff / autoProceedDelay)) * 100));
+		this.setState({
+			beforeContinueRemaining,
+			autoProceedRemaining
+		});
+
+		if (beforeContinueRemaining > 0 || autoProceedRemaining > 0)
 		{
-			const now = Date.now();
-			const diff = now - startTime;
-			const remaining = (1 - Math.min(1, diff / 3000)) * 100;
+			requestAnimationFrame(() => this.animate(startTime, beforeContinueDelay, autoProceedDelay));
+		}
+
+		if (autoProceedRemaining <= 0 && this.state.userData.playerGuid === this.state.gameData.game?.chooserGuid)
+		{
+			this.roundStartClick();
+		}
+	};
+
+	public componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>, snapshot?: any): void
+	{
+		const game = this.state.gameData.game;
+		const lastWinner = game?.lastWinner;
+		const winnerCardIds = lastWinner?.whiteCardIds ?? [];
+		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId]?.[cardId.cardIndex]);
+		if (lastWinner && game && winnerCards.length > 0 && !this.state.timeDownStarted)
+		{
+			console.log(this.state.beforeContinueRemaining);
+			const startTime = Date.now();
+			const beforeContinueDelay = 3000;
+			const autoProceedDelay = 10000;
+
 			this.setState({
-				remaining: Math.floor(remaining)
+				timeDownStarted: true
 			});
 
-			if (remaining > 0)
-			{
-				requestAnimationFrame(animate);
-			}
-		};
-
-		animate();
+			this.animate(startTime, beforeContinueDelay, autoProceedDelay);
+		}
 	}
 
 	private roundStartClick = () =>
@@ -98,7 +127,7 @@ export class ShowWinner extends React.Component<Props, State>
 		const game = this.state.gameData.game;
 		const lastWinner = game?.lastWinner;
 		const winnerCardIds = lastWinner?.whiteCardIds ?? [];
-		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId][cardId.cardIndex]);
+		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId]?.[cardId.cardIndex]);
 		if (!lastWinner || !game || winnerCards.length === 0)
 		{
 			return null;
@@ -126,26 +155,40 @@ export class ShowWinner extends React.Component<Props, State>
 				</Grid>
 				<Grid item xs={12} sm={12}>
 					{isChooser && (
-						<div style={{marginBottom: "2rem", textAlign: "center"}}>
+						<div style={{textAlign: "center"}}>
 							<LoadingButton
 								loading={this.state.roundStartLoading}
 								startIcon={
-									this.state.remaining > 0 && <CircularProgress
-										variant={"determinate"}
-										value={this.state.remaining}
-										size={20}
-									/>
+									this.state.beforeContinueRemaining > 0 && <CircularProgress
+                                        variant={"determinate"}
+                                        value={this.state.beforeContinueRemaining}
+                                        size={20}
+                                    />
 								}
 								size={"large"}
 								color={"primary"}
 								variant={"contained"}
 								onClick={this.roundStartClick}
-								disabled={this.state.remaining > 0}
+								disabled={this.state.beforeContinueRemaining > 0}
 							>
 								Start Next round
 							</LoadingButton>
 						</div>
 					)}
+					<div style={{marginBottom: "2rem", textAlign: "center"}}>
+						<div style={{display: "inline-flex", justifyContent: "center", margin: "2rem auto 0"}}>
+							<ListItemAvatar>
+								<CircularProgress
+									variant={"static"}
+									value={this.state.autoProceedRemaining}
+									size={20}
+								/>
+							</ListItemAvatar>
+							<ListItemText>
+								Next round auto-starting...
+							</ListItemText>
+						</div>
+					</div>
 					<Divider style={{margin: "1rem 0"}}/>
 					<Typography variant={"h4"}>
 						Winner: {winner?.nickname}!

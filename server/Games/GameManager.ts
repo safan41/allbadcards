@@ -13,6 +13,7 @@ import {AbortError, createClient, RedisClient, RetryStrategy} from "redis";
 import * as fs from "fs";
 import * as path from "path";
 import {CardId, GameItem, GamePayload, GamePlayer, PlayerMap} from "./Contract";
+import deepEqual from "deep-equal";
 
 interface IWSMessage
 {
@@ -387,7 +388,9 @@ class _GameManager
 			const player = existingGame.players[playerGuid];
 			const newPlayer = {...player};
 			const usedCards = existingGame.roundCards[playerGuid] ?? [];
-			newPlayer.whiteCards = player.whiteCards.filter(wc => !usedCards.includes(wc));
+			newPlayer.whiteCards = player.whiteCards.filter(wc =>
+				!usedCards.find(uc => deepEqual(uc, wc))
+			);
 			acc[playerGuid] = newPlayer;
 
 			return acc;
@@ -501,7 +504,9 @@ class _GameManager
 		const newGame = {...existingGame};
 
 		// Get the cards they haven't played
-		const unplayedCards = existingGame.players[playerGuid].whiteCards.filter(c => !playedCards.includes(c));
+		const unplayedCards = existingGame.players[playerGuid].whiteCards.filter(c =>
+			!playedCards.find(pc => deepEqual(pc, c))
+		);
 
 		unplayedCards.forEach(cardId => {
 			newGame.usedWhiteCards[cardId.packId] = newGame.usedWhiteCards[cardId.packId] ?? {};

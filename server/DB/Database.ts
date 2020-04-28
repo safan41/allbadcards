@@ -3,18 +3,23 @@ import * as fs from "fs";
 import * as path from "path";
 import {Config} from "../../config/config";
 import {format} from "util";
+import {logError, logMessage} from "../logger";
 
 class _Database
 {
 	public static Instance = new _Database();
 	private _client: MongoClient;
 	private url: string;
+	private user: string;
+	private pwd: string;
 
 	constructor()
 	{
 		const keysFile = fs.readFileSync(path.resolve(process.cwd(), "./config/keys.json"), "utf8");
 		const keys = JSON.parse(keysFile)[0];
 		this.url = keys.mongo[Config.Environment];
+		this.user = keys.mongoUser;
+		this.pwd = keys.mongoKey;
 	}
 
 	private get client()
@@ -29,22 +34,17 @@ class _Database
 
 	public initialize()
 	{
-		var user = encodeURIComponent('dave');
-		var password = encodeURIComponent('abc123');
-		var authMechanism = 'DEFAULT';
-		var url = format('mongodb://%s:%s@localhost:27017/myproject?authMechanism=%s',
-			user, password, authMechanism);
-
+		logMessage("Connecting to mongo");
 		MongoClient.connect(this.url, {
 			useNewUrlParser: true,
 			useUnifiedTopology: true,
-
 		}, async (err, client) =>
 		{
+			logMessage("Mongo connection attempt finished");
+			logError(err);
 			if (err)
 			{
-				console.error(err);
-				return
+				throw err;
 			}
 
 			this._client = client;

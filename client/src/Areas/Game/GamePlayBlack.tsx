@@ -12,6 +12,7 @@ import Chip from "@material-ui/core/Chip";
 import {AiFillCrown} from "react-icons/all";
 import {LoadingButton} from "../../UI/LoadingButton";
 import {BounceLoader, ClockLoader} from "react-spinners";
+import {PlayersRemaining} from "./Components/PlayersRemaining";
 
 interface IGamePlayBlackProps
 {
@@ -112,43 +113,17 @@ export class GamePlayBlack extends React.Component<Props, State>
 		const remainingPlayerGuids = Object.keys(players ?? {})
 			.filter(pg => !(pg in (roundCards ?? {})) && pg !== chooserGuid);
 
-		const playersAreRemaining = remainingPlayerGuids.length > 0;
-
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
 
 		const revealedIndex = this.state.gameData.game?.revealIndex ?? 0;
 		const timeToPick = remainingPlayers.length === 0;
 		const revealMode = timeToPick && revealedIndex < roundCardKeys.length;
-		const revealFinished = revealedIndex === roundCardKeys.length;
-
-		const waitingLabel = revealFinished && !playersAreRemaining
-			? "Pick the winner"
-			: timeToPick
-				? `Reveal each white card...`
-				: ``;
-
 		const hasWinner = !!gameData.game?.lastWinner;
 
 		return (
 			<>
 				<div>
-					<Chip
-						color={"primary"}
-						icon={<AiFillCrown/>}
-						label={"You!"}
-					/>
-					{roundStarted && remainingPlayers.map(player => (
-						<Chip
-							style={{marginLeft: 3, marginBottom: 3, paddingLeft: 8}}
-							avatar={<ClockLoader size={15} />}
-							label={player}
-						/>
-					))}
-					{!hasWinner && (
-						<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
-							{waitingLabel}
-						</Typography>
-					)}
+					<PlayersRemaining/>
 				</div>
 				<Divider style={{margin: "1rem 0"}}/>
 				{!roundStarted && (

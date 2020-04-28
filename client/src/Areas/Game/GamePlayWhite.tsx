@@ -17,6 +17,7 @@ import {LoadingButton} from "../../UI/LoadingButton";
 import {CardId} from "../../Global/Platform/Contract";
 import {BrowserUtils} from "../../Global/Utils/BrowserUtils";
 import {ClockLoader} from "react-spinners";
+import {PlayersRemaining} from "./Components/PlayersRemaining";
 
 interface IGamePlayWhiteProps
 {
@@ -200,7 +201,6 @@ export class GamePlayWhite extends React.Component<Props, State>
 			.filter(pg => !(pg in (roundCards ?? {})) && pg !== chooserGuid);
 
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
-		const chooser = players?.[chooserGuid!]?.nickname;
 
 		const hasPlayed = userData.playerGuid in roundCards;
 		const hasWinner = !!gameData.game?.lastWinner;
@@ -215,23 +215,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 
 		return (
 			<div style={{paddingBottom: "4rem"}}>
-				<Chip
-					color={"primary"}
-					icon={<AiFillCrown/>}
-					label={chooser}
-				/>
-				{roundStarted && remainingPlayers.map(player => (
-					<Chip
-						style={{marginLeft: 3, marginBottom: 3, paddingLeft: 8}}
-						avatar={<ClockLoader size={15} />}
-						label={player}
-					/>
-				))}
-				{!hasWinner && remainingPlayers.length === 0 && (
-					<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
-						{`Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`}
-					</Typography>
-				)}
+				<PlayersRemaining/>
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
 					{roundStarted &&

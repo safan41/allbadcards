@@ -92,7 +92,7 @@ export const WhiteCardHand: React.FC<Props> =
 									<Button
 										variant={"contained"}
 										color={"primary"}
-										disabled={metPickTarget || pickedCards.includes(cardId)}
+										disabled={metPickTarget || !!pickedCards.find(c => deepEqual(c, cardId))}
 										onClick={() => onPick(cardId)}
 									>
 										{label}
@@ -100,7 +100,7 @@ export const WhiteCardHand: React.FC<Props> =
 									<Button
 										variant={"contained"}
 										color={"primary"}
-										disabled={!pickedCards.includes(cardId)}
+										disabled={!pickedCards.find(c => deepEqual(c, cardId))}
 										onClick={() => onUnpick(cardId)}
 									>
 										Unpick

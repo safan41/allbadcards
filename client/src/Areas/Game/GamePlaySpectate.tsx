@@ -11,6 +11,7 @@ import {PickWinner} from "./Components/PickWinner";
 import Chip from "@material-ui/core/Chip";
 import {AiFillCrown} from "react-icons/all";
 import {ClockLoader} from "react-spinners";
+import {PlayersRemaining} from "./Components/PlayersRemaining";
 
 interface IGamePlaySpectateProps
 {
@@ -89,7 +90,6 @@ export class GamePlaySpectate extends React.Component<Props, State>
 
 		const remainingPlayerGuids = Object.keys(players ?? {})
 			.filter(pg => !(pg in (roundCards ?? {})) && pg !== chooserGuid);
-		const chooser = players?.[chooserGuid!]?.nickname;
 
 		const remainingPlayers = remainingPlayerGuids.map(pg => players?.[pg]?.nickname);
 
@@ -102,23 +102,7 @@ export class GamePlaySpectate extends React.Component<Props, State>
 		return (
 			<>
 				<div>
-					<Chip
-						color={"primary"}
-						icon={<AiFillCrown/>}
-						label={chooser}
-					/>
-					{roundStarted && remainingPlayers.map(player => (
-						<Chip
-							style={{marginLeft: 3, marginBottom: 3, paddingLeft: 8}}
-							avatar={<ClockLoader size={15} />}
-							label={player}
-						/>
-					))}
-					{!hasWinner && remainingPlayers.length === 0 && (
-						<Typography variant={"body1"} style={{marginTop: "0.5rem"}}>
-							{`Waiting for ${players?.[chooserGuid ?? ""]?.nickname} to pick the winner.`}
-						</Typography>
-					)}
+					<PlayersRemaining/>
 				</div>
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>

@@ -8,7 +8,6 @@ import Tooltip from "@material-ui/core/Tooltip";
 import Card from "@material-ui/core/Card";
 import CardMedia from "@material-ui/core/CardMedia";
 import CardContent from "@material-ui/core/CardContent";
-import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 
 const useStyles = makeStyles({
 	callout: {
@@ -121,8 +120,8 @@ export const SponsorList = (props: {familyMode: boolean}) =>
 			<Grid className={classes.sponsors}>
 				<Sponsor sponsor={undefined} isDiamondSponsor={true}/>
 
-				{sponsorsToUse.map(s =>
-					<Sponsor key={s?.url} sponsor={s}/>
+				{sponsorsToUse.map((s, i)=>
+					<Sponsor key={i} sponsor={s}/>
 				)}
 
 				<div style={{width: "100%"}}>
@@ -130,10 +129,10 @@ export const SponsorList = (props: {familyMode: boolean}) =>
 						<Card style={{maxWidth: "30rem", margin: "4rem auto 0"}} elevation={7}>
 							<CardMedia style={{paddingTop: "22.66667%"}} image={"/sponsors/shl.png"}/>
 							<CardContent>
+								<div style={{color: "blue"}}>
+									senahugheslauer.com
+								</div>
 								<Typography>
-									<div style={{color: "blue"}}>
-										senahugheslauer.com
-									</div>
 									My sister, without whom this site would not exist (it was her idea), is a communications
 									consultant who can make your business shine. Here's her site so you can hire her, because she rocks.
 								</Typography>

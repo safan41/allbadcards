@@ -107,7 +107,7 @@ class GameDashboard extends React.Component<Props, State>
 
 				{!GameDataStore.state.familyMode && (
 					<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "1rem"}}>
-						<Button component={p => <a {...p} href={"https://not.allbad.cards"}/>}>
+						<Button  href={"https://not.allbad.cards"}>
 							Family Edition &nbsp; <MdArrowForward/>
 						</Button>
 					</ButtonGroup>

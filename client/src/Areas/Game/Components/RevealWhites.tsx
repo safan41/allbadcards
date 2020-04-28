@@ -97,7 +97,7 @@ export class RevealWhites extends React.Component <Props, State>
 		}
 
 		const lastCard = realRevealIndex === roundCardKeys.length - 1;
-		const label = lastCard ? "Pick a winner" : "Next";
+		const label = lastCard ? "See All Cards" : "Next";
 
 		return (
 			<Grid item xs={12} sm={6}>

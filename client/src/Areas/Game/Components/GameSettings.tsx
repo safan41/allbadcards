@@ -1,5 +1,5 @@
 import React, {ChangeEvent, useState} from "react";
-import {LinearProgress, Slider, TextField, Typography} from "@material-ui/core";
+import {DialogActions, DialogTitle, LinearProgress, ListItemSecondaryAction, Slider, TextField, Typography} from "@material-ui/core";
 import {useDataStore} from "../../../Global/Utils/HookUtils";
 import {GameDataStore} from "../../../Global/DataStore/GameDataStore";
 import Checkbox from "@material-ui/core/Checkbox";
@@ -18,6 +18,13 @@ import useMediaQuery from "@material-ui/core/useMediaQuery";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
+import Dialog from "@material-ui/core/Dialog";
+import DialogContent from "@material-ui/core/DialogContent";
+import {SettingsBlockGame} from "./Settings/SettingsBlockGame";
+import {MdEdit} from "react-icons/all";
+import {SettingsBlockMainPacks} from "./Settings/SettingsBlockMainPacks";
+import IconButton from "@material-ui/core/IconButton";
+import {SettingsBlockCustomPacks} from "./Settings/SettingsBlockCustomPacks";
 
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 
@@ -39,169 +46,82 @@ const useStyles = makeStyles({
 
 export const GameSettings = () =>
 {
-	const gameData = useDataStore(GameDataStore);
-	const [cardCastDeckCode, setCardCastDeckCode] = useState("");
-
-	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
-	{
-		const newPacks = event.target.checked
-			? [...gameData.includedPacks, event.target.name]
-			: gameData.includedPacks.filter(a => a !== event.target.name);
-		GameDataStore.setIncludedPacks(newPacks);
-	};
-
-	const selectDefault = () =>
-	{
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...GameDataStore.getDefaultPacks(gameData.packs)])));
-	};
-
-	const selectAll = () =>
-	{
-		GameDataStore.setIncludedPacks(gameData.packs?.map(p => p.packId));
-	};
-
-	const selectNone = () =>
-	{
-		GameDataStore.setIncludedPacks([]);
-	};
-
-	const selectOfficial = () =>
-	{
-		const packs = gameData.packs
-			?.filter(pack => pack.isOfficial)
-			?.map(pack => pack.packId);
-
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
-	};
-
-	const onAddCardCastDeck = () =>
-	{
-		if (cardCastDeckCode.length !== 5)
-		{
-			return;
-		}
-
-		if (!gameData.includedCardcastPacks?.includes(cardCastDeckCode))
-		{
-			GameDataStore.setIncludedCardcastPacks([...gameData.includedCardcastPacks, cardCastDeckCode]);
-		}
-
-		setCardCastDeckCode("");
-	};
-
-	const selectThirdParty = () =>
-	{
-		const packs = gameData.packs
-			?.filter(pack => !pack.isOfficial)
-			?.map(pack => pack.packId);
-
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
-	};
-
-	const classes = useStyles();
-
-	const mobile = useMediaQuery('(max-width:600px)');
+	const [gameSettingsVisible, setGameSettingsVisible] = useState(false);
+	const [mainPackSettingsVisible, setMainPackSettingsVisible] = useState(false);
+	const [customPackSettingsVisible, setCustomPackSettingsVisible] = useState(false);
 
 	return (
 		<div>
 			<div style={{marginTop: "1rem"}}>
-				<ExpansionPanel>
-					<ExpansionPanelSummary
-						expandIcon={<ExpandMore/>}
-					>
-						<Typography>Game</Typography>
-					</ExpansionPanelSummary>
-					<ExpansionPanelDetails style={{display: "block"}}>
-						<SliderField/>
-						<UrlField/>
-					</ExpansionPanelDetails>
-				</ExpansionPanel>
-				{!gameData.familyMode && (
-					<ExpansionPanel>
-						<ExpansionPanelSummary
-							expandIcon={<ExpandMore/>}
-						>
-							<Typography>Base Card Packs</Typography>
-						</ExpansionPanelSummary>
-						<ExpansionPanelDetails>
-							<FormControl component="fieldset">
-								<Divider style={{marginBottom: "1rem"}}/>
-								<div>
-									<ButtonGroup orientation={mobile ? "vertical" : "horizontal"}>
-										<Button onClick={selectAll}>All</Button>
-										<Button onClick={selectNone}>None</Button>
-										<Button onClick={selectDefault}>+ Suggested</Button>
-										<Button onClick={selectOfficial}>+ Official Packs</Button>
-										<Button onClick={selectThirdParty}>+ Third-Party Packs</Button>
-									</ButtonGroup>
-									<Typography style={{padding: "1rem 0"}}>
-										<strong>{gameData.includedPacks?.length ?? 0}</strong> packs selected
-									</Typography>
-								</div>
-								{gameData.packs?.map(pack => (
-									<FormGroup key={pack.packId}>
-										<FormControlLabel
-											control={
-												<Checkbox
-													color={"primary"}
-													checked={gameData.includedPacks.indexOf(pack.packId) > -1}
-													onChange={onPacksChange}
-													name={pack.packId}/>
-											}
-											label={
-												<div>
-													<span>
-														{!pack.isOfficial && <small style={{fontSize: "0.75em", verticalAlign: "middle"}}>[Third-Party] </small>}
-														{pack.name}
-													</span>
-													<span className={classes.blackBox}>{pack.quantity.black}</span>
-													<span className={classes.whiteBox}>{pack.quantity.white}</span>
-												</div>
-											}
-										/>
-									</FormGroup>
-								))}
-							</FormControl>
-						</ExpansionPanelDetails>
-					</ExpansionPanel>
-				)}
-				<ExpansionPanel>
-					<ExpansionPanelSummary
-						expandIcon={<ExpandMore/>}
-					>
-						<Typography>Custom Card Packs</Typography>
-					</ExpansionPanelSummary>
-					<ExpansionPanelDetails style={{display: "block"}}>
-						<Typography variant={"caption"}>
-							Custom packs come from <a href={"https://www.cardcastgame.com/browse"} target={"_blank"}>CardCast</a>'s massive card database
-						</Typography>
-						<div style={{marginTop: "2rem"}}>
-							<TextField value={cardCastDeckCode} size={"small"} onChange={e => setCardCastDeckCode(e.target.value)} id="outlined-basic" label="CardCast Deck Code" variant="outlined"/>
-							<Button onClick={onAddCardCastDeck} disabled={cardCastDeckCode.length !== 5}>Add Deck</Button>
-						</div>
-
-						<List>
-							{gameData.includedCardcastPacks?.map(packId =>
-							{
-								const packDef = gameData.cardcastPackDefs[packId];
-								if (!packDef)
-								{
-									return null;
-								}
-
-								return (
-									<ListItem>
-										<ListItemText>{packDef.name}</ListItemText>
-									</ListItem>
-								);
-							})}
-						</List>
-						{gameData.cardcastPacksLoading && (
-							<LinearProgress color="primary" />
-						)}
-					</ExpansionPanelDetails>
-				</ExpansionPanel>
+				<List>
+					<ListItem>
+						<ListItemText primary={"General"} secondary={"Basic game settings"}/>
+						<ListItemSecondaryAction style={{right: 0}}>
+							<IconButton color={"primary"} onClick={() => setGameSettingsVisible(true)}>
+								<MdEdit/>
+							</IconButton>
+						</ListItemSecondaryAction>
+					</ListItem>
+					<ListItem>
+						<ListItemText primary={"Main Card Packs"} secondary={"Pick from official and third-party card packs for your game"} />
+						<ListItemSecondaryAction style={{right: 0}}>
+							<IconButton color={"primary"} onClick={() => setMainPackSettingsVisible(true)}>
+								<MdEdit/>
+							</IconButton>
+						</ListItemSecondaryAction>
+					</ListItem>
+					<ListItem>
+						<ListItemText primary={"Custom Card Packs"} secondary={
+							<span>
+								Add custom card packs from <a href={"https://www.cardcastgame.com/browse"} target={"_null"}>CardCast's</a> robust custom deck list.
+							</span>
+						} />
+						<ListItemSecondaryAction style={{right: 0}}>
+							<IconButton color={"primary"} onClick={() => setCustomPackSettingsVisible(true)}>
+								<MdEdit/>
+							</IconButton>
+						</ListItemSecondaryAction>
+					</ListItem>
+				</List>
 			</div>
+			<Dialog open={gameSettingsVisible} onClose={() => setGameSettingsVisible(false)}>
+				<DialogTitle>General</DialogTitle>
+				<DialogContent>
+					<SettingsBlockGame/>
+				</DialogContent>
+				<Divider />
+				<DialogActions>
+					<Button onClick={() => setGameSettingsVisible(false)} color="primary">
+						Save
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog open={mainPackSettingsVisible} onClose={() => setMainPackSettingsVisible(false)} maxWidth={"xl"}>
+				<DialogTitle>Main Card Packs</DialogTitle>
+				<DialogContent>
+					<SettingsBlockMainPacks/>
+				</DialogContent>
+				<Divider />
+				<DialogActions>
+					<Button onClick={() => setMainPackSettingsVisible(false)} color="primary">
+						Save
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog open={customPackSettingsVisible} onClose={() => setCustomPackSettingsVisible(false)} maxWidth={"xl"}>
+				<DialogTitle>Custom Card Packs</DialogTitle>
+				<DialogContent>
+					<SettingsBlockCustomPacks/>
+				</DialogContent>
+				<Divider />
+				<DialogActions>
+					<Button onClick={() => setCustomPackSettingsVisible(false)} color="primary">
+						Save
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 };
@@ -253,7 +173,7 @@ const SliderField = () =>
 
 	return (
 		<FormControl component="fieldset" style={{width: "100%"}}>
-			<Divider style={{margin: "1rem 0"}}/>
+			<Divider/>
 			<Typography>Rounds required to win: {gameData.roundsRequired}</Typography>
 			<Slider
 				defaultValue={gameData.roundsRequired}
