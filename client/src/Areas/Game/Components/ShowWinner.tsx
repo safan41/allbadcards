@@ -78,11 +78,6 @@ export class ShowWinner extends React.Component<Props, State>
 		{
 			requestAnimationFrame(() => this.animate(startTime, beforeContinueDelay, autoProceedDelay));
 		}
-
-		if (autoProceedRemaining <= 0 && this.state.userData.playerGuid === this.state.gameData.game?.chooserGuid)
-		{
-			this.roundStartClick();
-		}
 	};
 
 	public componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>, snapshot?: any): void

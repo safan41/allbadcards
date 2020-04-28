@@ -143,7 +143,7 @@ class GameDashboard extends React.Component<Props, State>
 							<Typography>
 								<strong>Updates - 4/27</strong>
 								<li>Added CardCast pack support. You can now add CardCast packs alongside first- and third-party card packs!</li>
-								<li>Refreshed card list with lots of newer official packs and better third-party packs</li>
+								<li> </li>
 								<li>Added round timer to auto-advance if winner does not manually do so.</li>
 								<li>Lots of UI improvements for game settings.</li>
 								<li>Polish for all loaders</li>

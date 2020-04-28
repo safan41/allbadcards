@@ -21,7 +21,8 @@ export const SettingsBlockGame: React.FC = () =>
 let timeout = 0;
 const UrlField = () =>
 {
-	const [url, setUrl] = useState("");
+	const gameData = useDataStore(GameDataStore);
+	const [url, setUrl] = useState(gameData.inviteLink ?? "");
 	const [invalid, setInvalid] = useState(false);
 
 	const setOuter = (value: string) =>
