@@ -15,10 +15,10 @@ const onError = (res: Response, error: Error, ...more: any[]) =>
 	throw error;
 };
 
-const sendWithBuildVersion = (gameItem: GameItem, res: Response) =>
+const sendWithBuildVersion = (data: any, res: Response) =>
 {
 	res.send({
-		...gameItem,
+		...data,
 		buildVersion: Config.Version
 	});
 };
@@ -129,7 +129,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		try
 		{
 			const game = await GameManager.createGame(req.body.ownerGuid, req.body.nickname);
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({
+				id: game.id
+			}, res);
 		}
 		catch (error)
 		{
@@ -142,14 +144,14 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.joinGame(
+			await GameManager.joinGame(
 				req.body.playerGuid,
 				req.body.gameId,
 				req.body.nickname,
 				JSON.parse(req.body.isSpectating ?? "false"),
 				false);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -162,9 +164,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.kickPlayer(req.body.gameId, req.body.targetGuid, req.body.playerGuid);
+			await GameManager.kickPlayer(req.body.gameId, req.body.targetGuid, req.body.playerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -177,16 +179,30 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.startGame(
+			await GameManager.startGame(
 				req.body.gameId,
 				req.body.ownerGuid,
-				req.body.includedPacks,
-				req.body.includedCardcastPacks,
-				parseInt(req.body.requiredRounds ?? 10),
-				req.body.inviteLink,
-				req.body.password);
+				req.body.settings);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
+		}
+		catch (error)
+		{
+			onError(res, error, req.url, req.query, req.body);
+		}
+	});
+
+	app.post("/api/game/update-settings", async (req, res, next) =>
+	{
+		logMessage(req.url, req.body);
+		try
+		{
+			await GameManager.updateSettings(
+				req.body.gameId,
+				req.body.ownerGuid,
+				req.body.settings);
+
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -200,17 +216,13 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		try
 		{
 			let game = await GameManager.restartGame(req.body.gameId, req.body.playerGuid);
-			game = await GameManager.startGame(
+			await GameManager.startGame(
 				game.id,
 				game.ownerGuid,
-				game.settings.includedPacks,
-				game.settings.includedCardcastPacks,
-				game.settings.roundsToWin,
-				game.settings.inviteLink,
-				game.settings.password
+				game.settings
 			);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -223,9 +235,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.playCard(req.body.gameId, req.body.playerGuid, req.body.cardIds);
+			await GameManager.playCard(req.body.gameId, req.body.playerGuid, req.body.cardIds);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -238,9 +250,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.forfeit(req.body.gameId, req.body.playerGuid, req.body.playedCards);
+			await GameManager.forfeit(req.body.gameId, req.body.playerGuid, req.body.playedCards);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -253,9 +265,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.revealNext(req.body.gameId, req.body.ownerGuid);
+			await GameManager.revealNext(req.body.gameId, req.body.ownerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -268,9 +280,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.skipBlack(req.body.gameId, req.body.ownerGuid);
+			await GameManager.skipBlack(req.body.gameId, req.body.ownerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -283,9 +295,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.startRound(req.body.gameId, req.body.ownerGuid);
+			await GameManager.startRound(req.body.gameId, req.body.ownerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -298,9 +310,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.addRandomPlayer(req.body.gameId, req.body.ownerGuid);
+			await GameManager.addRandomPlayer(req.body.gameId, req.body.ownerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -313,9 +325,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.selectWinnerCard(req.body.gameId, req.body.playerGuid, req.body.winningPlayerGuid);
+			await GameManager.selectWinnerCard(req.body.gameId, req.body.playerGuid, req.body.winningPlayerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{
@@ -328,9 +340,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.nextRound(req.body.gameId, req.body.playerGuid);
+			await GameManager.nextRound(req.body.gameId, req.body.playerGuid);
 
-			sendWithBuildVersion(game, res);
+			sendWithBuildVersion({success: true}, res);
 		}
 		catch (error)
 		{

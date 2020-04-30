@@ -1,6 +1,6 @@
 import {ErrorDataStore} from "../DataStore/ErrorDataStore";
 import ReactGA from "react-ga";
-import {CardId, GameItem, IBlackCardDefinition, ICardPackSummary} from "./Contract";
+import {CardId, GameItem, IBlackCardDefinition, ICardPackSummary, IGameSettings} from "./Contract";
 
 export interface GamePayload extends GameItem
 {
@@ -104,22 +104,28 @@ class _Platform
 	public async startGame(
 		ownerGuid: string,
 		gameId: string,
-		includedPacks: string[],
-		includedCardcastPacks: string[],
-		requiredRounds: number,
-		inviteLink: string | null = null,
-		password: string | null = null)
+		settings: IGameSettings)
 	{
 		this.trackEvent("start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/start", {
 			gameId,
 			ownerGuid,
-			includedPacks,
-			includedCardcastPacks,
-			requiredRounds,
-			inviteLink,
-			password
+			settings
+		});
+	}
+
+	public async updateSettings(
+		ownerGuid: string,
+		gameId: string,
+		settings: IGameSettings)
+	{
+		this.trackEvent("start", gameId);
+
+		return _Platform.doPost<GameItem>("/api/game/update-settings", {
+			gameId,
+			ownerGuid,
+			settings
 		});
 	}
 

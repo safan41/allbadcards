@@ -218,13 +218,13 @@ export class GamePlayWhite extends React.Component<Props, State>
 				<PlayersRemaining/>
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
-					{roundStarted &&
-                    <Grid item xs={12} sm={6}>
-                        <BlackCard>
-							{gameData.blackCardDef?.content}
-                        </BlackCard>
-                    </Grid>
-					}
+					{(roundStarted && !hasWinner) && (
+						<Grid item xs={12} sm={6}>
+							<BlackCard>
+								{gameData.blackCardDef?.content}
+							</BlackCard>
+						</Grid>
+					)}
 					{!roundStarted && (
 						<Typography>Waiting for the round to start...</Typography>
 					)}

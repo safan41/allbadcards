@@ -40,14 +40,14 @@ export const SettingsBlockMainPacks = () =>
 	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{
 		const newPacks = event.target.checked
-			? [...gameData.includedPacks, event.target.name]
-			: gameData.includedPacks.filter(a => a !== event.target.name);
+			? [...gameData.ownerSettings.includedPacks, event.target.name]
+			: gameData.ownerSettings.includedPacks.filter(a => a !== event.target.name);
 		GameDataStore.setIncludedPacks(newPacks);
 	};
 
 	const selectDefault = () =>
 	{
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...GameDataStore.getDefaultPacks(gameData.packs)])));
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.ownerSettings.includedPacks, ...GameDataStore.getDefaultPacks(gameData.packs)])));
 	};
 
 	const selectAll = () =>
@@ -66,7 +66,7 @@ export const SettingsBlockMainPacks = () =>
 			?.filter(pack => pack.isOfficial)
 			?.map(pack => pack.packId);
 
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.ownerSettings.includedPacks, ...packs])));
 	};
 
 	const selectThirdParty = () =>
@@ -75,7 +75,7 @@ export const SettingsBlockMainPacks = () =>
 			?.filter(pack => !pack.isOfficial)
 			?.map(pack => pack.packId);
 
-		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.includedPacks, ...packs])));
+		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.ownerSettings.includedPacks, ...packs])));
 	};
 
 	const classes = useStyles();
@@ -94,7 +94,7 @@ export const SettingsBlockMainPacks = () =>
 					<Button onClick={selectThirdParty}>+ Third-Party Packs</Button>
 				</ButtonGroup>
 				<Typography style={{padding: "1rem 0"}}>
-					<strong>{gameData.includedPacks?.length ?? 0}</strong> packs selected
+					<strong>{gameData.ownerSettings.includedPacks?.length ?? 0}</strong> packs selected
 				</Typography>
 			</div>
 			<List>
@@ -108,7 +108,7 @@ export const SettingsBlockMainPacks = () =>
 								color={"primary"}
 								onChange={onPacksChange}
 								name={pack.packId}
-								checked={gameData.includedPacks.indexOf(pack.packId) > -1}
+								checked={gameData.ownerSettings.includedPacks.indexOf(pack.packId) > -1}
 							/>
 						</ListItemSecondaryAction>
 					</ListItem>

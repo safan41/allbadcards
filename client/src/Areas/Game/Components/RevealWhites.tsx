@@ -7,6 +7,7 @@ import {GameDataStore, IGameDataStorePayload} from "../../../Global/DataStore/Ga
 import {IUserData, UserDataStore} from "../../../Global/DataStore/UserDataStore";
 import sanitize from "sanitize-html";
 import {LoadingButton} from "../../../UI/LoadingButton";
+import {Typography} from "@material-ui/core";
 
 interface IRevealWhitesProps
 {
@@ -69,8 +70,8 @@ export class RevealWhites extends React.Component <Props, State>
 			gameData,
 			revealLoading
 		} = this.state;
-		
-		if(!gameData.game)
+
+		if (!gameData.game)
 		{
 			return null;
 		}
@@ -96,17 +97,19 @@ export class RevealWhites extends React.Component <Props, State>
 			return null;
 		}
 
-		const lastCard = realRevealIndex === roundCardKeys.length - 1;
+		const totalCardLength = roundCardKeys.length;
+		const lastCard = realRevealIndex === totalCardLength - 1;
 		const label = lastCard ? "See All Cards" : "Next";
+		const canSeeReveal = this.props.canReveal || !game.settings.hideDuringReveal;
 
 		return (
 			<Grid item xs={12} sm={6}>
-				{realRevealIndex >= 0 && (
+				{(realRevealIndex >= 0 && canSeeReveal) && (
 					<>
 						<WhiteCard key={revealedIndex} style={{marginBottom: "0.5rem"}}>
 							{cardsRevealed.map(card => card && (
 								<>
-									<div dangerouslySetInnerHTML={{__html: sanitize(card)}} />
+									<div dangerouslySetInnerHTML={{__html: sanitize(card)}}/>
 									<Divider style={{margin: "1rem 0"}}/>
 								</>
 							))}
@@ -117,6 +120,9 @@ export class RevealWhites extends React.Component <Props, State>
 							)}
 						</WhiteCard>
 					</>
+				)}
+				{realRevealIndex > -1 && (
+					<Typography>Revealed: {realRevealIndex + 1} / {totalCardLength}</Typography>
 				)}
 				{realRevealIndex === -1 && this.props.canReveal && (
 					<LoadingButton loading={revealLoading} color={"primary"} variant={"contained"} onClick={this.onReveal}>

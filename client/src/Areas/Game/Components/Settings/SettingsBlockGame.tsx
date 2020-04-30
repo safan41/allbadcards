@@ -1,28 +1,54 @@
 import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import React, {ChangeEvent, useState} from "react";
-import {GameDataStore} from "../../../../Global/DataStore/GameDataStore";
+import {GameDataStore, IGameDataStorePayload} from "../../../../Global/DataStore/GameDataStore";
 import FormControl from "@material-ui/core/FormControl";
 import Divider from "@material-ui/core/Divider";
-import {Slider, TextField, Typography} from "@material-ui/core";
+import {ListItemSecondaryAction, Slider, TextField, Typography} from "@material-ui/core";
 import {useDataStore} from "../../../../Global/Utils/HookUtils";
+import Game from "../../Game";
+import Checkbox from "@material-ui/core/Checkbox";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
+import Switch from "@material-ui/core/Switch";
+import List from "@material-ui/core/List";
 
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 
 export const SettingsBlockGame: React.FC = () =>
 {
+	const gameData = useDataStore(GameDataStore);
+
 	return (
-		<div style={{paddingBottom: "1rem"}}>
-			<SliderField/>
-			<UrlField/>
-		</div>
+		<List style={{paddingBottom: "1rem"}}>
+			<RoundsRequiredField gameData={gameData}/>
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
+			<UrlField gameData={gameData}/>
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
+			<PlayerLimitField gameData={gameData}/>
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
+			<HideDuringReveal gameData={gameData}/>
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
+			<SkipReveal gameData={gameData}/>
+		</List>
 	);
 };
 
-let timeout = 0;
-const UrlField = () =>
+
+interface IGameDataProps
 {
-	const gameData = useDataStore(GameDataStore);
-	const [url, setUrl] = useState(gameData.inviteLink ?? "");
+	gameData: IGameDataStorePayload;
+}
+
+let timeout = 0;
+const UrlField: React.FC<IGameDataProps> = ({
+	                                            gameData
+                                            }) =>
+{
+	const [url, setUrl] = useState(gameData.ownerSettings.inviteLink ?? "");
 	const [invalid, setInvalid] = useState(false);
 
 	const setOuter = (value: string) =>
@@ -42,20 +68,21 @@ const UrlField = () =>
 	};
 
 	return (
-		<FormControl component="fieldset" style={{width: "100%"}}>
-			<Divider style={{margin: "1rem 0"}}/>
-			<Typography>Chat / Video invite URL</Typography>
-			<Typography style={{marginBottom: "0.5rem"}} variant={"caption"}>Allow players to easily join your video chat by adding an invite URL</Typography>
-			<TextField value={url} label="URL" variant="outlined" onChange={(e) => setOuter(e.target.value)} error={invalid}/>
-		</FormControl>
+		<ListItem>
+			<FormControl component="fieldset" style={{width: "100%"}}>
+				<Typography>Chat / Video invite URL</Typography>
+				<Typography style={{marginBottom: "0.5rem"}} variant={"caption"}>Allow players to easily join your video chat by adding an invite URL</Typography>
+				<TextField value={url} label="URL" variant="outlined" onChange={(e) => setOuter(e.target.value)} error={invalid}/>
+			</FormControl>
+		</ListItem>
 	);
 };
 
 let sliderTimeout = 0;
-const SliderField = () =>
+const RoundsRequiredField: React.FC<IGameDataProps> = ({
+	                                                       gameData
+                                                       }) =>
 {
-	const gameData = useDataStore(GameDataStore);
-
 	const onChange = (e: ChangeEvent<{}>, v: number | number[]) =>
 	{
 		clearTimeout(sliderTimeout);
@@ -66,20 +93,108 @@ const SliderField = () =>
 	};
 
 	return (
+		<ListItem>
+			<FormControl component="fieldset" style={{width: "100%"}}>
+				<Typography>Rounds required to win: {gameData.ownerSettings?.roundsToWin}</Typography>
+				<Typography style={{marginBottom: "0.5rem"}} variant={"caption"}>The game will end if a player wins this many rounds</Typography>
+				<Slider
+					defaultValue={gameData.ownerSettings?.roundsToWin}
+					onChange={onChange}
+					aria-labelledby="discrete-slider"
+					valueLabelDisplay="auto"
+					step={1}
+					marks
+					min={1}
+					max={25}
+				/>
+			</FormControl>
+		</ListItem>
+	);
+};
+
+const PlayerLimitField: React.FC<IGameDataProps> = ({
+	                                                    gameData
+                                                    }) =>
+{
+	const onChange = (e: ChangeEvent<{}>, v: number | number[]) =>
+	{
+		clearTimeout(sliderTimeout);
+		sliderTimeout = window.setTimeout(() =>
+		{
+			GameDataStore.setPlayerLimit(v as number)
+		}, 500);
+	};
+
+	return (
+		<ListItem>
+			<FormControl component="fieldset" style={{width: "100%"}}>
+				<Typography>Player limit: {gameData.ownerSettings?.playerLimit}</Typography>
+				<Typography style={{marginBottom: "0.5rem"}} variant={"caption"}>The maximum number of players for this game</Typography>
+				<Slider
+					defaultValue={gameData.ownerSettings.playerLimit}
+					onChange={onChange}
+					aria-labelledby="discrete-slider"
+					valueLabelDisplay="auto"
+					step={1}
+					marks
+					min={3}
+					max={50}
+				/>
+			</FormControl>
+		</ListItem>
+	);
+};
+
+const HideDuringReveal: React.FC<IGameDataProps> = ({
+	                                                    gameData
+                                                    }) =>
+{
+	const onChange = (e: ChangeEvent<{}>, v: boolean) =>
+	{
+		GameDataStore.setHideDuringReveal(v);
+	};
+
+	return (
 		<FormControl component="fieldset" style={{width: "100%"}}>
-			<Divider style={{margin: "0 0 1rem 0"}}/>
-			<Typography>Rounds required to win: {gameData.roundsRequired}</Typography>
-			<Typography style={{marginBottom: "0.5rem"}} variant={"caption"}>The game will end if a player wins this many rounds</Typography>
-			<Slider
-				defaultValue={gameData.roundsRequired}
-				onChange={onChange}
-				aria-labelledby="discrete-slider"
-				valueLabelDisplay="auto"
-				step={1}
-				marks
-				min={1}
-				max={25}
-			/>
+			<ListItem>
+				<ListItemText primary={"Hide Cards During Reveal"} secondary={`While revealing white cards each round, don't show them to the rest of players.`}/>
+				<ListItemSecondaryAction>
+					<Switch
+						edge="end"
+						color={"primary"}
+						onChange={onChange}
+						name={"hideDuringReveal"}
+						checked={gameData.ownerSettings.hideDuringReveal}
+					/>
+				</ListItemSecondaryAction>
+			</ListItem>
+		</FormControl>
+	);
+};
+
+const SkipReveal: React.FC<IGameDataProps> = ({
+	                                              gameData
+                                              }) =>
+{
+	const onChange = (e: ChangeEvent<{}>, v: boolean) =>
+	{
+		GameDataStore.setSkipReveal(v);
+	};
+
+	return (
+		<FormControl component="fieldset" style={{width: "100%"}}>
+			<ListItem>
+				<ListItemText primary={"Skip Reveal"} secondary={`Skip right to picking a winner without reading each white card.`}/>
+				<ListItemSecondaryAction>
+					<Switch
+						edge="end"
+						color={"primary"}
+						onChange={onChange}
+						name={"hideDuringReveal"}
+						checked={gameData.ownerSettings.skipReveal}
+					/>
+				</ListItemSecondaryAction>
+			</ListItem>
 		</FormControl>
 	);
 };

@@ -14,6 +14,7 @@ import Avatar from "@material-ui/core/Avatar";
 import sanitize from "sanitize-html";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import {LoadingButton} from "../../../UI/LoadingButton";
+import {BlackCard} from "../../../UI/BlackCard";
 
 interface IShowWinnerProps
 {
@@ -84,7 +85,7 @@ export class ShowWinner extends React.Component<Props, State>
 	{
 		const game = this.state.gameData.game;
 		const lastWinner = game?.lastWinner;
-		const winnerCardIds = lastWinner?.whiteCardIds ?? [];
+		const winnerCardIds = lastWinner?.whiteCards ?? [];
 		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId]?.[cardId.cardIndex]);
 		if (lastWinner && game && winnerCards.length > 0 && !this.state.timeDownStarted)
 		{
@@ -120,74 +121,89 @@ export class ShowWinner extends React.Component<Props, State>
 	public render()
 	{
 		const game = this.state.gameData.game;
-		const lastWinner = game?.lastWinner;
-		const winnerCardIds = lastWinner?.whiteCardIds ?? [];
+		const settings = game?.settings;
+		const players = game?.players ?? {};
+		const playerGuids = Object.keys(players);
+		const gameWinnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 99));
+		const gameWinner = gameWinnerGuid ? game?.players?.[gameWinnerGuid] : undefined;
+		const lastWinner = game?.lastWinner ?? gameWinner;
+		const winnerCardIds = lastWinner?.whiteCards ?? [];
 		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId]?.[cardId.cardIndex]);
-		if (!lastWinner || !game || winnerCards.length === 0)
+		const blackCardContent = this.state.gameData.blackCardDef?.content;
+		if (!lastWinner || !game || winnerCards.length === 0 || !blackCardContent)
 		{
 			return null;
 		}
 
-		const playerGuids = Object.keys(game.players);
-
 		const isChooser = game.chooserGuid === this.state.userData.playerGuid;
 
-		const winner = game.players[lastWinner.playerGuid];
+		const winner = game.players[lastWinner.guid];
 
 		const sortedPlayerGuids = [...playerGuids].sort((a, b) => game.players[b].wins - game.players[a].wins);
 
 		return (
 			<>
-				<Grid item xs={12} sm={6}>
-					<WhiteCard style={{marginBottom: "0.5rem"}}>
-						{winnerCards.map(card => card && (
-							<>
-								<div dangerouslySetInnerHTML={{__html: sanitize(card)}}/>
-								<Divider/>
-							</>
-						))}
-					</WhiteCard>
+				<Grid style={{margin: "3rem 0 0.5rem"}} container spacing={3}>
+					<Grid item xs={12} sm={6}>
+						<BlackCard>
+							{blackCardContent}
+						</BlackCard>
+					</Grid>
+					<Grid item xs={12} sm={6}>
+						<WhiteCard>
+							{winnerCards.map(card => card && (
+								<>
+									<div dangerouslySetInnerHTML={{__html: sanitize(card)}}/>
+									<Divider/>
+								</>
+							))}
+						</WhiteCard>
+					</Grid>
 				</Grid>
 				<Grid item xs={12} sm={12}>
-					{isChooser && (
-						<div style={{textAlign: "center"}}>
-							<LoadingButton
-								loading={this.state.roundStartLoading}
-								startIcon={
-									this.state.beforeContinueRemaining > 0 && <CircularProgress
-                                        variant={"determinate"}
-                                        value={this.state.beforeContinueRemaining}
-                                        size={20}
-                                    />
-								}
-								size={"large"}
-								color={"primary"}
-								variant={"contained"}
-								onClick={this.roundStartClick}
-								disabled={this.state.beforeContinueRemaining > 0}
-							>
-								Start Next round
-							</LoadingButton>
-						</div>
+					{!gameWinner && (
+						<>
+							{isChooser && (
+								<div style={{textAlign: "center"}}>
+									<LoadingButton
+										loading={this.state.roundStartLoading}
+										startIcon={
+											this.state.beforeContinueRemaining > 0 && <CircularProgress
+                                                variant={"determinate"}
+                                                value={this.state.beforeContinueRemaining}
+                                                size={20}
+                                            />
+										}
+										size={"large"}
+										color={"primary"}
+										variant={"contained"}
+										onClick={this.roundStartClick}
+										disabled={this.state.beforeContinueRemaining > 0}
+									>
+										Start Next round
+									</LoadingButton>
+								</div>
+							)}
+							<div style={{marginBottom: "2rem", textAlign: "center"}}>
+								<div style={{display: "inline-flex", justifyContent: "center", margin: "2rem auto 0"}}>
+									<ListItemAvatar>
+										<CircularProgress
+											variant={"static"}
+											value={this.state.autoProceedRemaining}
+											size={20}
+										/>
+									</ListItemAvatar>
+									<ListItemText>
+										Next round auto-starting...
+									</ListItemText>
+								</div>
+							</div>
+							<Divider style={{margin: "1rem 0"}}/>
+							<Typography variant={"h4"}>
+								Winner: {winner?.nickname}!
+							</Typography>
+						</>
 					)}
-					<div style={{marginBottom: "2rem", textAlign: "center"}}>
-						<div style={{display: "inline-flex", justifyContent: "center", margin: "2rem auto 0"}}>
-							<ListItemAvatar>
-								<CircularProgress
-									variant={"static"}
-									value={this.state.autoProceedRemaining}
-									size={20}
-								/>
-							</ListItemAvatar>
-							<ListItemText>
-								Next round auto-starting...
-							</ListItemText>
-						</div>
-					</div>
-					<Divider style={{margin: "1rem 0"}}/>
-					<Typography variant={"h4"}>
-						Winner: {winner?.nickname}!
-					</Typography>
 					<div style={{marginTop: "1rem"}}>
 						<Typography>Scoreboard</Typography>
 						<List>

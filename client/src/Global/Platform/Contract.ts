@@ -1,3 +1,5 @@
+import {CardPackMap} from "../../../../server/Games/Contract";
+
 export type PlayerMap = { [key: string]: GamePlayer };
 
 export interface GamePlayer
@@ -16,6 +18,19 @@ export interface CardId
 	cardIndex: number;
 }
 
+export interface IGameSettings
+{
+	hideDuringReveal: boolean;
+	skipReveal: boolean;
+	public: boolean;
+	playerLimit: number;
+	password: string | null;
+	roundsToWin: number;
+	inviteLink: string | null;
+	includedPacks: string[];
+	includedCardcastPacks: string[];
+}
+
 export interface GameItem
 {
 	id: string;
@@ -25,27 +40,18 @@ export interface GameItem
 	chooserGuid: string | null;
 	started: boolean;
 	dateCreated: Date;
-	public: boolean;
 	players: PlayerMap;
 	spectators: PlayerMap;
+	pendingPlayers: PlayerMap;
 	blackCard: CardId;
 	// key = player guid, value = white card ID
 	roundCards: { [key: string]: CardId[] };
 	playerOrder: string[];
-	usedBlackCards: CardId[];
-	usedWhiteCards: CardId[];
+	usedBlackCards: CardPackMap;
+	usedWhiteCards: CardPackMap;
 	revealIndex: number;
-	lastWinner: {
-		playerGuid: string;
-		whiteCardIds: CardId[];
-	} | undefined;
-	settings: {
-		password: string | null;
-		roundsToWin: number;
-		inviteLink: string | null;
-		includedPacks: string[];
-		includedCardcastPacks: string[];
-	}
+	lastWinner: GamePlayer | undefined;
+	settings: IGameSettings;
 }
 
 export interface GamePayload extends GameItem

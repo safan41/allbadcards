@@ -130,11 +130,13 @@ export class GamePlayBlack extends React.Component<Props, State>
 					<Typography style={{marginBottom: "0.5rem", textAlign: "center"}}>Read the card aloud, then click Start The Round!</Typography>
 				)}
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
-					<Grid item xs={12} sm={6}>
-						<BlackCard>
-							{gameData.blackCardDef?.content}
-						</BlackCard>
-					</Grid>
+					{(!hasWinner) && (
+						<Grid item xs={12} sm={6}>
+							<BlackCard>
+								{gameData.blackCardDef?.content}
+							</BlackCard>
+						</Grid>
+					)}
 					<RevealWhites canReveal={true}/>
 					<ShowWinner/>
 				</Grid>

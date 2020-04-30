@@ -23,8 +23,8 @@ export const SettingsBlockCustomPacks: React.FC = () =>
 	const onPacksChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{
 		const newPacks = event.target.checked
-			? [...gameData.includedPacks, event.target.name]
-			: gameData.includedPacks.filter(a => a !== event.target.name);
+			? [...gameData.ownerSettings.includedPacks, event.target.name]
+			: gameData.ownerSettings.includedPacks.filter(a => a !== event.target.name);
 		GameDataStore.setIncludedPacks(newPacks);
 	};
 
@@ -35,9 +35,9 @@ export const SettingsBlockCustomPacks: React.FC = () =>
 			return;
 		}
 
-		if (!gameData.includedCardcastPacks?.includes(cardCastDeckCode))
+		if (!gameData.ownerSettings.includedCardcastPacks?.includes(cardCastDeckCode))
 		{
-			GameDataStore.setIncludedCardcastPacks([...gameData.includedCardcastPacks, cardCastDeckCode]);
+			GameDataStore.setIncludedCardcastPacks([...gameData.ownerSettings.includedCardcastPacks, cardCastDeckCode]);
 		}
 
 		setCardCastDeckCode("");
@@ -45,7 +45,7 @@ export const SettingsBlockCustomPacks: React.FC = () =>
 
 	const removeCardCastDeck = (packId: string) =>
 	{
-		const newDecks = [...gameData.includedCardcastPacks].filter(p => p !== packId);
+		const newDecks = [...gameData.ownerSettings.includedCardcastPacks].filter(p => p !== packId);
 
 		GameDataStore.setIncludedCardcastPacks(newDecks);
 	};
@@ -59,10 +59,10 @@ export const SettingsBlockCustomPacks: React.FC = () =>
 				</Button>
 			</div>
 
-			{(gameData.includedCardcastPacks?.length ?? 0 > 0) ?
+			{(gameData.ownerSettings.includedCardcastPacks?.length ?? 0 > 0) ?
 				(
 					<List>
-						{gameData.includedCardcastPacks?.map((packId, index) =>
+						{gameData.ownerSettings.includedCardcastPacks?.map((packId, index) =>
 						{
 							const packDef = gameData.cardcastPackDefs[packId];
 							if (!packDef)

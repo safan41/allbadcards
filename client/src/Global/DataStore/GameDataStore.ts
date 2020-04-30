@@ -4,7 +4,8 @@ import {UserDataStore} from "./UserDataStore";
 import deepEqual from "deep-equal";
 import {ArrayFlatten} from "../Utils/ArrayUtils";
 import {CardCastApi, IDeck} from "isomorphic-cardcast-api";
-import {CardId, IBlackCardDefinition, ICardPackSummary} from "../Platform/Contract";
+import {CardId, IBlackCardDefinition, ICardPackSummary, IGameSettings} from "../Platform/Contract";
+import {ErrorDataStore} from "./ErrorDataStore";
 
 export type WhiteCardMap = {
 	[packId: string]: {
@@ -14,20 +15,19 @@ export type WhiteCardMap = {
 
 export interface IGameDataStorePayload
 {
+	/**
+	 * This is used just to SET settings. Reading settings should be done using the `game` property
+	 */
+	ownerSettings: IGameSettings,
 	hasConnection: boolean;
 	loaded: boolean;
 	familyMode: boolean;
 	game: GamePayload | null;
 	packs: ICardPackSummary[];
-	includedPacks: string[];
-	includedCardcastPacks: string[];
 	cardcastPackDefs: { [key: string]: IDeck };
 	cardcastPacksLoading: boolean;
 	roundCardDefs: WhiteCardMap;
 	playerCardDefs: WhiteCardMap;
-	roundsRequired: number;
-	password: string | null;
-	inviteLink: string | null;
 	blackCardDef: IBlackCardDefinition | null;
 }
 
@@ -44,14 +44,20 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		packs: [],
 		roundCardDefs: {},
 		playerCardDefs: {},
-		includedPacks: [],
-		includedCardcastPacks: [],
 		cardcastPackDefs: {},
 		cardcastPacksLoading: false,
-		roundsRequired: 7,
-		password: null,
 		blackCardDef: null,
-		inviteLink: null
+		ownerSettings: {
+			skipReveal: false,
+			hideDuringReveal: true,
+			includedCardcastPacks: [],
+			includedPacks: [],
+			inviteLink: null,
+			password: null,
+			playerLimit: 50,
+			public: false,
+			roundsToWin: 7
+		},
 	};
 
 	public static Instance = new _GameDataStore(_GameDataStore.InitialState);
@@ -94,7 +100,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 						this.update({
 							packs: data,
-							includedPacks: defaultPacks
+							ownerSettings: {
+								...this.state.ownerSettings,
+								includedPacks: defaultPacks
+							}
 						})
 					});
 			}
@@ -121,9 +130,17 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public getDefaultPacks(packs: ICardPackSummary[])
 	{
-		return packs.filter(a => !a.packId.match(/pax|conversion|gencon|mass_effect|midterm|house_of_cards|jack_white|hawaii|desert_bus|reject/gi)
+		const officialDefaults = packs.filter(a =>
+			!a.packId.match(/pax|conversion|gencon|mass_effect|midterm|house_of_cards|jack_white|hawaii|desert_bus|reject|geek/gi)
 			&& a.isOfficial
-		).map(p => p.packId);
+		);
+
+		const thirdPartyDefaults = packs.filter(a =>
+			!a.isOfficial
+			&& !!a.packId.match(/crabs|carbs|guards|punishment/gi)
+		);
+
+		return [...officialDefaults, ...thirdPartyDefaults].map(p => p.packId);
 	}
 
 	public clear()
@@ -180,6 +197,17 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			location.href = location.href + "";
 		}
 
+		if(this.state.ownerSettings
+			&& this.state.game
+			&& !deepEqual(prev.ownerSettings, this.state.ownerSettings))
+		{
+			Platform.updateSettings(
+				this.state.game.ownerGuid,
+				this.state.game.id,
+				this.state.ownerSettings)
+				.catch(ErrorDataStore.add);
+		}
+
 		if (!deepEqual(prev.game?.roundCards, this.state.game?.roundCards))
 		{
 			this.loadRoundCards();
@@ -194,6 +222,41 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		{
 			this.loadBlackCard();
 		}
+
+		const newCardcastPacks = this.state.ownerSettings.includedCardcastPacks.filter(p => !prev.ownerSettings?.includedCardcastPacks.includes(p));
+
+		if (newCardcastPacks.length > 0)
+		{
+			this.update({
+				cardcastPacksLoading: true
+			});
+		}
+
+		let loaded = 0;
+		newCardcastPacks.forEach(pack =>
+		{
+			CardCastApi.getDeck(pack)
+				.then(packData =>
+				{
+					this.update({
+						cardcastPackDefs: {
+							...this.state.cardcastPackDefs,
+							[pack]: packData
+						}
+					});
+				})
+				.finally(() =>
+				{
+					loaded++;
+					if (loaded === newCardcastPacks.length)
+					{
+						this.update({
+							cardcastPacksLoading: false
+						});
+					}
+				});
+		});
+
 	}
 
 	private loadRoundCards()
@@ -261,6 +324,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public hydrate(gameId: string)
 	{
+		this.update({
+			loaded: false
+		});
+
 		console.log("[GameDataStore] Hydrating...", gameId);
 
 		return Platform.getGame(gameId)
@@ -268,7 +335,8 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			{
 				this.update({
 					loaded: true,
-					game: data as GamePayload
+					game: data as GamePayload,
+					ownerSettings: data.settings
 				});
 			})
 			.catch(e =>
@@ -350,62 +418,65 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 	public setIncludedPacks(includedPacks: string[])
 	{
-		this.update({
+		this.setSetting({
 			includedPacks
 		});
 	}
 
 	public setIncludedCardcastPacks(includedCardcastPacks: string[])
 	{
-		const newPacks = includedCardcastPacks.filter(p => !this.state.includedCardcastPacks.includes(p));
+		const currentIncluded = this.state.ownerSettings.includedCardcastPacks;
 
-		if(newPacks.length > 0)
-		{
-			this.update({
-				cardcastPacksLoading: true
-			});
-		}
-
-		let loaded = 0;
-		newPacks.forEach(pack =>
-		{
-			CardCastApi.getDeck(pack)
-				.then(packData =>
-				{
-					this.update({
-						cardcastPackDefs: {
-							...this.state.cardcastPackDefs,
-							[pack]: packData
-						}
-					});
-				})
-				.finally(() => {
-					loaded++;
-					if(loaded === newPacks.length)
-					{
-						this.update({
-							cardcastPacksLoading: false
-						});
-					}
-				});
-		});
-
-		this.update({
+		this.setSetting({
 			includedCardcastPacks
 		});
 	}
 
 	public setRequiredRounds(rounds: number)
 	{
+		this.setSetting({
+			roundsToWin: rounds
+		});
+	}
+
+	public setPlayerLimit(limit: number)
+	{
+		this.setSetting({
+			playerLimit: limit
+		});
+	}
+
+	public setHideDuringReveal(hideDuringReveal: boolean)
+	{
+		this.setSetting({
+			hideDuringReveal
+		});
+	}
+
+	public setSkipReveal(skipReveal: boolean)
+	{
+		this.setSetting({
+			skipReveal
+		});
+	}
+
+	private setSetting(partial: Partial<IGameSettings>)
+	{
 		this.update({
-			roundsRequired: rounds
+			ownerSettings: {
+				...this.state.ownerSettings,
+				...partial
+			}
 		});
 	}
 
 	public setInviteLink(url: string)
 	{
 		this.update({
-			inviteLink: url
+			ownerSettings: {
+				...this.state.ownerSettings,
+				inviteLink: url
+			}
 		});
 	}
 

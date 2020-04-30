@@ -12,7 +12,7 @@ import {logError, logMessage, logWarning} from "../logger";
 import {AbortError, createClient, RedisClient, RetryStrategy} from "redis";
 import * as fs from "fs";
 import * as path from "path";
-import {CardId, GameItem, GamePayload, GamePlayer, PlayerMap} from "./Contract";
+import {CardId, GameItem, GamePayload, GamePlayer, IGameSettings, PlayerMap} from "./Contract";
 import deepEqual from "deep-equal";
 
 interface IWSMessage
@@ -218,12 +218,10 @@ class _GameManager
 
 	private updateSocketGames(game: GameItem)
 	{
-		const playerGuids = Object.keys(game.players);
-		const spectatorGuids = Object.keys(game.spectators);
-		const allGuids = [...playerGuids, ...spectatorGuids];
+		const playerGuids = Object.keys({...game.players, ...game.pendingPlayers, ...game.spectators});
 
 		// Get every socket that needs updating
-		const wsIds = allGuids
+		const wsIds = playerGuids
 			.map(pg => this.wsClientPlayerMap[pg])
 			.reduce((acc, val) => acc.concat(val), []);
 
@@ -241,7 +239,7 @@ class _GameManager
 		});
 	}
 
-	public async createGame(ownerGuid: string, nickname: string, roundsToWin = 99, password = ""): Promise<GameItem>
+	public async createGame(ownerGuid: string, nickname: string, roundsToWin = 7, password = ""): Promise<GameItem>
 	{
 		logMessage(`Creating game for ${ownerGuid}`);
 
@@ -259,7 +257,7 @@ class _GameManager
 				players: {[ownerGuid]: _GameManager.createPlayer(ownerGuid, nickname, false, false)},
 				playerOrder: [],
 				spectators: {},
-				public: false,
+				pendingPlayers: {},
 				started: false,
 				blackCard: {
 					cardIndex: -1,
@@ -271,8 +269,12 @@ class _GameManager
 				revealIndex: -1,
 				lastWinner: undefined,
 				settings: {
+					hideDuringReveal: false,
+					skipReveal: false,
 					roundsToWin,
 					password,
+					public: false,
+					playerLimit: 50,
 					inviteLink: null,
 					includedPacks: [],
 					includedCardcastPacks: []
@@ -301,7 +303,7 @@ class _GameManager
 	{
 		const existingGame = await this.getGame(gameId);
 
-		if (Object.keys(existingGame.players).length >= 50)
+		if (Object.keys(existingGame.players).length >= existingGame.settings.playerLimit)
 		{
 			throw new Error("This game is full.");
 		}
@@ -316,11 +318,18 @@ class _GameManager
 		}
 		else
 		{
-			newGame.players[playerGuid] = newPlayer;
+			if (newGame.started)
+			{
+				newGame.pendingPlayers[playerGuid] = newPlayer;
+			}
+			else
+			{
+				newGame.players[playerGuid] = newPlayer;
+			}
 		}
 
 		// If the game already started, deal in this new person
-		if (newGame.started && !isSpectating)
+		if (newGame.started && !isSpectating && !newGame.started)
 		{
 			const newGameWithCards = await CardManager.dealWhiteCards(newGame);
 			newGame.players[playerGuid].whiteCards = newGameWithCards.players[playerGuid].whiteCards;
@@ -340,11 +349,6 @@ class _GameManager
 			throw new Error("You don't have kick permission!",);
 		}
 
-		if (existingGame.chooserGuid === targetGuid)
-		{
-			throw new Error("You can't kick the Card Czar.");
-		}
-
 		const newGame = {...existingGame};
 		delete newGame.players[targetGuid];
 		delete newGame.roundCards[targetGuid];
@@ -356,6 +360,12 @@ class _GameManager
 			newGame.ownerGuid = Object.keys(newGame.players)[0];
 		}
 
+		// If the owner deletes themselves, pick a new owner
+		if (targetGuid === existingGame.chooserGuid)
+		{
+			newGame.chooserGuid = newGame.ownerGuid;
+		}
+
 		await this.updateGame(newGame);
 
 		return newGame;
@@ -363,7 +373,7 @@ class _GameManager
 
 	public async nextRound(gameId: string, chooserGuid: string)
 	{
-		if(gameId in this.gameRoundTimers)
+		if (gameId in this.gameRoundTimers)
 		{
 			clearTimeout(this.gameRoundTimers[gameId]);
 		}
@@ -387,19 +397,22 @@ class _GameManager
 		// Iterate the round index
 		newGame.roundIndex = existingGame.roundIndex + 1;
 
-		const playerGuids = Object.keys(existingGame.players);
+		newGame.players = {...newGame.players, ...newGame.pendingPlayers};
+		newGame.pendingPlayers = {};
+		const playerGuids = Object.keys(newGame.players);
 		const nonRandomPlayerGuids = playerGuids.filter(pg => !newGame.players[pg].isRandom);
 
 		// Grab a new chooser
 		const chooserIndex = newGame.roundIndex % nonRandomPlayerGuids.length;
 		newGame.chooserGuid = nonRandomPlayerGuids[chooserIndex];
 
+
 		// Remove the played white card from each player's hand
 		newGame.players = playerGuids.reduce((acc, playerGuid) =>
 		{
-			const player = existingGame.players[playerGuid];
+			const player = newGame.players[playerGuid];
 			const newPlayer = {...player};
-			const usedCards = existingGame.roundCards[playerGuid] ?? [];
+			const usedCards = newGame.roundCards[playerGuid] ?? [];
 			newPlayer.whiteCards = player.whiteCards.filter(wc =>
 				!usedCards.find(uc => deepEqual(uc, wc))
 			);
@@ -425,11 +438,7 @@ class _GameManager
 	public async startGame(
 		gameId: string,
 		ownerGuid: string,
-		includedPacks: string[],
-		includedCardcastPacks: string[],
-		requiredRounds = 10,
-		inviteLink: string | null = null,
-		password: string | null = null
+		settings: IGameSettings,
 	)
 	{
 		const existingGame = await this.getGame(gameId);
@@ -444,11 +453,7 @@ class _GameManager
 		const playerGuids = Object.keys(existingGame.players);
 		newGame.chooserGuid = playerGuids[0];
 		newGame.started = true;
-		newGame.settings.includedPacks = includedPacks;
-		newGame.settings.includedCardcastPacks = includedCardcastPacks;
-		newGame.settings.password = password;
-		newGame.settings.roundsToWin = requiredRounds;
-		newGame.settings.inviteLink = inviteLink;
+		newGame.settings = {...newGame.settings, ...settings};
 
 		newGame = await CardManager.nextBlackCard(newGame);
 		newGame = await CardManager.dealWhiteCards(newGame);
@@ -458,6 +463,27 @@ class _GameManager
 		return newGame;
 	}
 
+	public async updateSettings(
+		gameId: string,
+		ownerGuid: string,
+		settings: IGameSettings,
+	)
+	{
+		const existingGame = await this.getGame(gameId);
+
+		if (existingGame.ownerGuid !== ownerGuid)
+		{
+			throw new Error("User cannot edit settings");
+		}
+
+		let newGame = {...existingGame};
+
+		newGame.settings = {...newGame.settings, ...settings};
+
+		await this.updateGame(newGame);
+
+		return newGame;
+	}
 
 	public async restartGame(
 		gameId: string,
@@ -545,6 +571,10 @@ class _GameManager
 
 		const newGame = {...existingGame};
 		newGame.revealIndex = newGame.revealIndex + 1;
+		if (newGame.settings.skipReveal)
+		{
+			newGame.revealIndex = Object.keys(newGame.roundCards).length;
+		}
 
 		await this.updateGame(newGame);
 
@@ -579,6 +609,7 @@ class _GameManager
 
 		const newGame = {...existingGame};
 		newGame.roundStarted = true;
+		newGame.lastWinner = undefined;
 
 		await this.updateGame(newGame);
 
@@ -643,16 +674,22 @@ class _GameManager
 		const newGame = {...existingGame};
 		const played = existingGame.roundCards[winnerPlayerGuid];
 		newGame.players[winnerPlayerGuid].wins = newGame.players[winnerPlayerGuid].wins + 1;
-		newGame.lastWinner = {
-			playerGuid: winnerPlayerGuid,
-			whiteCardIds: played
-		};
+		newGame.lastWinner = newGame.players[winnerPlayerGuid];
 
 		await this.updateGame(newGame);
 
-		this.gameRoundTimers[gameId] = setTimeout(() => {
-			this.nextRound(gameId, playerGuid);
-		}, 10000);
+		const settings = newGame.settings;
+		const players = newGame.players;
+		const playerGuids = Object.keys(players);
+		const gameWinnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 50));
+
+		if (!gameWinnerGuid)
+		{
+			this.gameRoundTimers[gameId] = setTimeout(() =>
+			{
+				this.nextRound(gameId, playerGuid);
+			}, 10000);
+		}
 
 		return newGame;
 	}

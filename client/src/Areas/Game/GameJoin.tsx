@@ -68,7 +68,8 @@ const GameJoin: React.FC<IGameJoinProps> = (props) =>
 	};
 
 	const joined = userData.playerGuid in (gameData.game?.players ?? {})
-		|| userData.playerGuid in (gameData.game?.spectators ?? {});
+		|| userData.playerGuid in (gameData.game?.spectators ?? {})
+		|| userData.playerGuid in (gameData.game?.pendingPlayers ?? {});
 
 	return (
 		<GamePreview id={props.id}>
@@ -92,7 +93,13 @@ const GameJoin: React.FC<IGameJoinProps> = (props) =>
 			)}
 
 			{joined && (
-				<Typography>Waiting for game to start...</Typography>
+				<>
+					{gameData.game?.started ? (
+						<Typography>Waiting for next round to start...</Typography>
+					):(
+						<Typography>Waiting for game to start...</Typography>
+					)}
+				</>
 			)}
 		</GamePreview>
 	);

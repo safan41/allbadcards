@@ -141,12 +141,15 @@ class GameDashboard extends React.Component<Props, State>
 					<Grid container>
 						<Grid item md={7} xs={12}>
 							<Typography>
-								<strong>Updates - 4/27</strong>
-								<li>Added CardCast pack support. You can now add CardCast packs alongside first- and third-party card packs!</li>
-								<li> </li>
-								<li>Added round timer to auto-advance if winner does not manually do so.</li>
-								<li>Lots of UI improvements for game settings.</li>
-								<li>Polish for all loaders</li>
+								<strong>Updates - 4/30</strong>
+								<li>Added option to hide white cards during reveal</li>
+								<li>Added option to limit the maximum number of players for a game</li>
+								<li>Added option to skip white card reveal and go straight to picking the winner</li>
+								<li>Winner screen now shows the winning hand</li>
+								<li>Settings are saved during editing so refreshing does not reset settings</li>
+								<li>Added Venmo/Cash App as donation options</li>
+								<li>Updated default card packs to include some of the third-party packs</li>
+								<li>Added selected pack count to settings summary</li>
 								<br/>
 							</Typography>
 						</Grid>

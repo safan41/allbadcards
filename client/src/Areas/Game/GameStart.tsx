@@ -11,6 +11,7 @@ import {MdAdd} from "react-icons/all";
 import {useDataStore} from "../../Global/Utils/HookUtils";
 import {Tooltip} from "@material-ui/core";
 import Button from "@material-ui/core/Button";
+import {BrowserUtils} from "../../Global/Utils/BrowserUtils";
 
 interface IGameStartProps
 {
@@ -28,14 +29,12 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 	{
 		setStartLoading(true);
 
+		BrowserUtils.scrollToTop();
+
 		Platform.startGame(
 			UserDataStore.state.playerGuid,
 			props.id,
-			gameData.includedPacks,
-			gameData.includedCardcastPacks,
-			gameData.roundsRequired,
-			gameData.inviteLink,
-			gameData.password)
+			gameData.ownerSettings)
 			.catch(e => console.error(e))
 			.finally(() => setStartLoading(false));
 	};
@@ -52,7 +51,7 @@ const GameStart: React.FC<IGameStartProps> = (props) =>
 	const randomPlayers = playerGuids.filter(pg => players[pg]?.isRandom) ?? [];
 	const nonRandomPlayers = playerGuids.filter(pg => !players[pg]?.isRandom) ?? [];
 	const canAddRandom = randomPlayers.length < 10;
-	const selectedPacks = [...gameData.includedPacks, ...gameData.includedCardcastPacks];
+	const selectedPacks = [...gameData.ownerSettings.includedPacks, ...gameData.ownerSettings.includedCardcastPacks];
 	const canStart = nonRandomPlayers.length > 1 && selectedPacks.length > 0;
 
 	return (

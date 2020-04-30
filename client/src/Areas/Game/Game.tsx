@@ -16,7 +16,7 @@ import Grid from "@material-ui/core/Grid";
 import {Sponsor} from "../GameDashboard/SponsorList";
 import Divider from "@material-ui/core/Divider";
 import {ErrorBoundary} from "../../App/ErrorBoundary";
-import CardContent from "@material-ui/core/CardContent";
+import {ShowWinner} from "./Components/ShowWinner";
 
 interface IGameParams
 {
@@ -163,6 +163,8 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 								</LoadingButton>
 							</div>
 						)}
+
+						<ShowWinner />
 					</div>
 				)}
 				{!winnerGuid && (

@@ -15,6 +15,7 @@ import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import {ContainerProgress} from "../../../UI/ContainerProgress";
 import Tooltip from "@material-ui/core/Tooltip";
+import {GamePayload} from "../../../Global/Platform/Contract";
 
 const useStyles = makeStyles({
 	iconButton: {
@@ -22,6 +23,11 @@ const useStyles = makeStyles({
 		fontSize: "1.5rem",
 	},
 });
+
+const getPlayerOrPending = (game: GamePayload | undefined, guid: string) =>
+{
+	return game?.players[guid] ?? game?.pendingPlayers[guid];
+};
 
 export const GameRoster = () =>
 {
@@ -49,8 +55,9 @@ export const GameRoster = () =>
 			.catch(e => console.error(e));
 	};
 
-	const playerGuids = Object.keys(game.players);
-	const sortedPlayerGuids = [...playerGuids].sort((a, b) => game.players[b].wins - game.players[a].wins);
+	const playerGuids = Object.keys({...game.players, ...game.pendingPlayers});
+	const sortedPlayerGuids = [...playerGuids].sort((a, b) =>
+		(getPlayerOrPending(game, b)?.wins ?? 0) - (getPlayerOrPending(game, a)?.wins ?? 0));
 
 	const isOwner = gameData.game?.ownerGuid === userData.playerGuid;
 	const playerCount = playerGuids.length;
@@ -61,21 +68,31 @@ export const GameRoster = () =>
 			<List>
 				{sortedPlayerGuids.map(pg =>
 				{
-					const player = game?.players[pg];
+					const player = getPlayerOrPending(game, pg);
 					const isSelf = pg === userData.playerGuid;
+
+					if (!player)
+					{
+						return null;
+					}
 
 					return (
 						<React.Fragment key={pg}>
 							<ListItem>
-								<ListItemAvatar>
-									<Avatar>
-										<strong>{player.wins}</strong>
-									</Avatar>
-								</ListItemAvatar>
+								{game.started && (
+									<ListItemAvatar>
+										<Avatar>
+											<strong style={{color: "black"}}>{player?.wins}</strong>
+										</Avatar>
+									</ListItemAvatar>
+								)}
 								<ListItemText>
 									{player.nickname}
 									{player.guid === gameData.game?.ownerGuid && <>
                                         <span> (Owner)</span>
+                                    </>}
+									{player.guid in (gameData.game?.pendingPlayers ?? {}) && <>
+                                        <span> (Waiting for next round)</span>
                                     </>}
 								</ListItemText>
 
