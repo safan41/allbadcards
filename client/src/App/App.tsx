@@ -127,7 +127,7 @@ const App: React.FC = () =>
 			</Helmet>
 			<OuterContainer>
 				<Paper elevation={10}>
-					<Container maxWidth={"md"} style={{position: "relative", padding: 0, background: "#FFF", minHeight: "100vh"}}>
+					<Container maxWidth={"xl"} style={{position: "relative", padding: 0, background: "#FFF", minHeight: "100vh"}}>
 						<CardMedia>
 							<AppBar color={"transparent"} position="static" elevation={0}>
 								<Toolbar className={appBarClasses}>

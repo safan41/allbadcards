@@ -35,31 +35,34 @@ const theme = createMuiTheme({
 	},
 });
 
-Sentry.init({
-	dsn: "https://6d23e717863b4e2e9870dad240f4e965@o377988.ingest.sentry.io/5200785",
-	beforeSend: (event, hint) =>
-	{
-		let discard = false;
-
-		if (event.message?.includes("ceCurrentVideo.currentTime")
-			|| event.message?.includes("chrome-extension"))
+if(!location.hostname.includes("local"))
+{
+	Sentry.init({
+		dsn: "https://6d23e717863b4e2e9870dad240f4e965@o377988.ingest.sentry.io/5200785",
+		beforeSend: (event, hint) =>
 		{
-			discard = true;
-		}
+			let discard = false;
 
-		if(event.breadcrumbs?.some(a => a.data?.url?.includes("analytics")))
-		{
-			discard = true;
-		}
+			if (event.message?.includes("ceCurrentVideo.currentTime")
+				|| event.message?.includes("chrome-extension"))
+			{
+				discard = true;
+			}
 
-		if (discard)
-		{
-			return null;
-		}
+			if (event.breadcrumbs?.some(a => a.data?.url?.includes("analytics")))
+			{
+				discard = true;
+			}
 
-		return event;
-	}
-});
+			if (discard)
+			{
+				return null;
+			}
+
+			return event;
+		}
+	});
+}
 
 ReactGA.initialize('UA-23730353-5', {
 	debug: location.hostname.includes("local") || location.hostname.includes("beta")

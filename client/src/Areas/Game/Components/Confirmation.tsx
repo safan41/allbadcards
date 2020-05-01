@@ -30,7 +30,7 @@ export const Confirmation: React.FC = (props) =>
 
 	return (
 		<div className={classes.container}>
-			<Container maxWidth={"md"} style={{padding :0}}>
+			<Container maxWidth={"xl"} style={{padding :0}}>
 				<div className={classes.inner}>
 					{props.children}
 				</div>

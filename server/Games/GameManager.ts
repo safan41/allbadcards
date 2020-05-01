@@ -12,8 +12,9 @@ import {logError, logMessage, logWarning} from "../logger";
 import {AbortError, createClient, RedisClient, RetryStrategy} from "redis";
 import * as fs from "fs";
 import * as path from "path";
-import {CardId, GameItem, GamePayload, GamePlayer, IGameSettings, PlayerMap} from "./Contract";
+import {CardId, GameItem, GamePayload, GamePlayer, IGameSettings, IPlayer, PlayerMap} from "./Contract";
 import deepEqual from "deep-equal";
+import {UserUtils} from "../User/UserUtils";
 
 interface IWSMessage
 {
@@ -50,6 +51,14 @@ class _GameManager
 	private static get games()
 	{
 		return Database.db.collection<GameItem>("games");
+	}
+
+	private validateUser(user: IPlayer)
+	{
+		if(!UserUtils.validateUser(user))
+		{
+			throw new Error("You cannot perform this action because you are not this user.");
+		}
 	}
 
 	private initializeRedis()
@@ -239,8 +248,12 @@ class _GameManager
 		});
 	}
 
-	public async createGame(ownerGuid: string, nickname: string, roundsToWin = 7, password = ""): Promise<GameItem>
+	public async createGame(owner: IPlayer, nickname: string, roundsToWin = 7, password = ""): Promise<GameItem>
 	{
+		this.validateUser(owner);
+
+		const ownerGuid = owner.guid;
+
 		logMessage(`Creating game for ${ownerGuid}`);
 
 		const gameId = hri.random();
@@ -299,8 +312,12 @@ class _GameManager
 		}
 	}
 
-	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating: boolean, isRandom: boolean)
+	public async joinGame(player: IPlayer, gameId: string, nickname: string, isSpectating: boolean, isRandom: boolean)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (Object.keys(existingGame.players).length >= existingGame.settings.playerLimit)
@@ -340,8 +357,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async kickPlayer(gameId: string, targetGuid: string, ownerGuid: string)
+	public async kickPlayer(gameId: string, targetGuid: string, owner: IPlayer)
 	{
+		this.validateUser(owner);
+
+		const ownerGuid = owner.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.ownerGuid !== ownerGuid && targetGuid !== ownerGuid)
@@ -371,8 +392,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async nextRound(gameId: string, chooserGuid: string)
+	public async nextRound(gameId: string, chooser: IPlayer)
 	{
+		this.validateUser(chooser);
+
+		const chooserGuid = chooser.guid;
+
 		if (gameId in this.gameRoundTimers)
 		{
 			clearTimeout(this.gameRoundTimers[gameId]);
@@ -437,10 +462,14 @@ class _GameManager
 
 	public async startGame(
 		gameId: string,
-		ownerGuid: string,
+		owner: IPlayer,
 		settings: IGameSettings,
 	)
 	{
+		this.validateUser(owner);
+
+		const ownerGuid = owner.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.ownerGuid !== ownerGuid)
@@ -465,10 +494,14 @@ class _GameManager
 
 	public async updateSettings(
 		gameId: string,
-		ownerGuid: string,
+		owner: IPlayer,
 		settings: IGameSettings,
 	)
 	{
+		this.validateUser(owner);
+
+		const ownerGuid = owner.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.ownerGuid !== ownerGuid)
@@ -480,6 +513,11 @@ class _GameManager
 
 		newGame.settings = {...newGame.settings, ...settings};
 
+		if (newGame.settings.playerLimit > 50)
+		{
+			throw new Error("Player limit cannot be greater than 50");
+		}
+
 		await this.updateGame(newGame);
 
 		return newGame;
@@ -487,9 +525,13 @@ class _GameManager
 
 	public async restartGame(
 		gameId: string,
-		playerGuid: string
+		player: IPlayer
 	)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 		const newGame = {...existingGame};
 
@@ -505,8 +547,6 @@ class _GameManager
 		});
 
 		newGame.roundIndex = 0;
-		newGame.usedBlackCards = {};
-		newGame.usedWhiteCards = {};
 		newGame.revealIndex = -1;
 		newGame.roundCards = {};
 		newGame.roundStarted = false;
@@ -522,9 +562,17 @@ class _GameManager
 		return newGame;
 	}
 
-	public async playCard(gameId: string, playerGuid: string, cardIds: CardId[])
+	public async playCard(gameId: string, player: IPlayer, cardIds: CardId[])
 	{
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
+		const playerData = existingGame.players[playerGuid];
+		const isRandom = playerData.isRandom;
+		if(!isRandom)
+		{
+			this.validateUser(player);
+		}
 
 		const newGame = {...existingGame};
 		newGame.roundCards[playerGuid] = cardIds;
@@ -535,8 +583,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async forfeit(gameId: string, playerGuid: string, playedCards: CardId[])
+	public async forfeit(gameId: string, player: IPlayer, playedCards: CardId[])
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		const newGame = {...existingGame};
@@ -560,8 +612,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async revealNext(gameId: string, playerGuid: string)
+	public async revealNext(gameId: string, player: IPlayer)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.chooserGuid !== playerGuid)
@@ -581,8 +637,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async skipBlack(gameId: string, playerGuid: string)
+	public async skipBlack(gameId: string, player: IPlayer)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.chooserGuid !== playerGuid)
@@ -598,8 +658,12 @@ class _GameManager
 		return newGame;
 	}
 
-	public async startRound(gameId: string, playerGuid: string)
+	public async startRound(gameId: string, player: IPlayer)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.chooserGuid !== playerGuid)
@@ -638,16 +702,23 @@ class _GameManager
 						cards = newCards;
 					}
 
-					await this.playCard(gameId, pg, cards);
+					await this.playCard(gameId, {
+						secret: "",
+						guid: player.guid
+					}, cards);
 				}
 			});
 	}
 
-	public async addRandomPlayer(gameId: string, playerGuid: string)
+	public async addRandomPlayer(gameId: string, owner: IPlayer)
 	{
+		this.validateUser(owner);
+
+		const ownerGuid = owner.guid;
+
 		const existingGame = await this.getGame(gameId);
 
-		if (existingGame.ownerGuid !== playerGuid)
+		if (existingGame.ownerGuid !== ownerGuid)
 		{
 			throw new Error("You are not the owner!");
 		}
@@ -657,13 +728,23 @@ class _GameManager
 		const used = Object.keys(newGame.players).map(pg => newGame.players[pg].nickname);
 		const [newNickname] = ArrayUtils.getRandomUnused(RandomPlayerNicknames, used);
 
-		newGame = await this.joinGame(shortid.generate(), gameId, newNickname, false, true);
+		const userId = shortid.generate();
+		const fakePlayer: IPlayer = {
+			guid: userId,
+			secret: UserUtils.generateSecret(userId)
+		};
+
+		newGame = await this.joinGame(fakePlayer, gameId, newNickname, false, true);
 
 		return newGame;
 	}
 
-	public async selectWinnerCard(gameId: string, playerGuid: string, winnerPlayerGuid: string)
+	public async selectWinnerCard(gameId: string, player: IPlayer, winnerPlayerGuid: string)
 	{
+		this.validateUser(player);
+
+		const playerGuid = player.guid;
+
 		const existingGame = await this.getGame(gameId);
 
 		if (existingGame.chooserGuid !== playerGuid)
@@ -687,7 +768,7 @@ class _GameManager
 		{
 			this.gameRoundTimers[gameId] = setTimeout(() =>
 			{
-				this.nextRound(gameId, playerGuid);
+				this.nextRound(gameId, player);
 			}, 10000);
 		}
 

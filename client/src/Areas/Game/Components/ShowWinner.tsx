@@ -89,7 +89,6 @@ export class ShowWinner extends React.Component<Props, State>
 		const winnerCards = winnerCardIds.map(cardId => this.state.gameData.roundCardDefs?.[cardId.packId]?.[cardId.cardIndex]);
 		if (lastWinner && game && winnerCards.length > 0 && !this.state.timeDownStarted)
 		{
-			console.log(this.state.beforeContinueRemaining);
 			const startTime = Date.now();
 			const beforeContinueDelay = 3000;
 			const autoProceedDelay = 10000;
@@ -143,13 +142,13 @@ export class ShowWinner extends React.Component<Props, State>
 
 		return (
 			<>
-				<Grid style={{margin: "3rem 0 0.5rem"}} container spacing={3}>
-					<Grid item xs={12} sm={6}>
+				<Grid style={{margin: "3rem 0 0.5rem", justifyContent: "center"}} container spacing={3}>
+					<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 						<BlackCard>
 							{blackCardContent}
 						</BlackCard>
 					</Grid>
-					<Grid item xs={12} sm={6}>
+					<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 						<WhiteCard>
 							{winnerCards.map(card => card && (
 								<>

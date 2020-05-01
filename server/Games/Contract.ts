@@ -2,6 +2,12 @@ export type PlayerMap = { [key: string]: GamePlayer };
 
 export type CardPackMap = { [packId: string]: { [cardIndex: number]: CardId } };
 
+export interface IPlayer
+{
+	guid: string;
+	secret: string;
+}
+
 export interface GamePlayer
 {
 	guid: string;

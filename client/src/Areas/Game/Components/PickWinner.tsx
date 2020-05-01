@@ -73,9 +73,9 @@ export const PickWinner: React.FC<IPickWinnerProps> = (
 		<>
 			{timeToPick && !revealMode && !hasWinner && (
 				<>
-					<Grid container spacing={2}>
+					<Grid container spacing={2} style={{justifyContent: "center"}}>
 						{roundCardKeys.map((playerGuid, i) => (
-							<Grid item xs={12} sm={6} md={4}>
+							<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 								<WhiteCard actions={canPick && (
 									<LoadingButton
 										loading={pickWinnerLoading}

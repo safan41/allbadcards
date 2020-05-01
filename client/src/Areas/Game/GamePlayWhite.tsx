@@ -4,7 +4,7 @@ import {IUserData, UserDataStore} from "../../Global/DataStore/UserDataStore";
 import Grid from "@material-ui/core/Grid";
 import {BlackCard} from "../../UI/BlackCard";
 import Divider from "@material-ui/core/Divider";
-import {Typography} from "@material-ui/core";
+import {DialogActions, DialogTitle, Typography} from "@material-ui/core";
 import {RevealWhites} from "./Components/RevealWhites";
 import {ShowWinner} from "./Components/ShowWinner";
 import {Confirmation} from "./Components/Confirmation";
@@ -18,6 +18,10 @@ import {CardId} from "../../Global/Platform/Contract";
 import {BrowserUtils} from "../../Global/Utils/BrowserUtils";
 import {ClockLoader} from "react-spinners";
 import {PlayersRemaining} from "./Components/PlayersRemaining";
+import Dialog from "@material-ui/core/Dialog";
+import DialogContent from "@material-ui/core/DialogContent";
+import {SettingsBlockCustomPacks} from "./Components/Settings/SettingsBlockCustomPacks";
+import Button from "@material-ui/core/Button";
 
 interface IGamePlayWhiteProps
 {
@@ -39,6 +43,7 @@ interface IGamePlayWhiteState
 	canUseMyCardsSuck: boolean;
 	suckButtonLoading: boolean,
 	playButtonLoading: boolean,
+	cardsSuckVisible: boolean;
 }
 
 export class GamePlayWhite extends React.Component<Props, State>
@@ -53,6 +58,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 			suckButtonLoading: false,
 			playButtonLoading: false,
 			pickedCards: [],
+			cardsSuckVisible: false,
 			didForfeit: false,
 			canUseMyCardsSuck: this.determineCanUseMyCardsSuck(GameDataStore.state.game?.roundIndex ?? 0, GameDataStore.state.game?.id)
 		};
@@ -101,7 +107,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 		if (this.state?.gameData?.game && (this.state.gameData?.game?.roundIndex ?? 0 < lastUsedCardsSuckIndex))
 		{
 			lastUsedCardsSuckIndex = 0;
-			this.setCardsSuckUsedRound(gameId, 0);
+			this.setCardsSuckUsedRound(gameId, -1);
 		}
 
 		const diff = currentRoundIndex - lastUsedCardsSuckIndex;
@@ -146,31 +152,41 @@ export class GamePlayWhite extends React.Component<Props, State>
 		localStorage.setItem(this.getCardsSuckLsKey(gameId), String(roundIndex ?? 0));
 	}
 
+	private showForfeitConfirm = () => {
+		this.setState({
+			cardsSuckVisible: true
+		});
+	};
+
+	private hideForfeitConfirm = () => {
+		this.setState({
+			cardsSuckVisible: false
+		});
+	};
+
 	private onForfeit = () =>
 	{
-		const didConfirm = confirm("" +
-			"You could still win this round, but we'll automatically play a random selection from your hand, then give you new cards. " +
-			"Do you really want to do that?");
-		if (didConfirm)
+		this.hideForfeitConfirm();
+
+		this.setState({
+			didForfeit: true,
+			suckButtonLoading: true
+		});
+
+		const gameId = this.state.gameData.game?.id;
+
+		if (gameId)
 		{
-			this.setState({
-				didForfeit: true,
-				suckButtonLoading: true
-			});
-
-			const gameId = this.state.gameData.game?.id;
-
-			if (gameId)
-			{
-				this.setCardsSuckUsedRound(gameId, this.state.gameData.game?.roundIndex);
-			}
-
-			let targetPicked = this.state.gameData.blackCardDef?.pick ?? 1;
-			GameDataStore.forfeit(this.state.userData.playerGuid, targetPicked)
-				.finally(() => this.setState({
-					suckButtonLoading: false
-				}));
+			this.setCardsSuckUsedRound(gameId, this.state.gameData.game?.roundIndex);
 		}
+
+		let targetPicked = this.state.gameData.blackCardDef?.pick ?? 1;
+		GameDataStore.forfeit(this.state.userData.playerGuid, targetPicked)
+			.finally(() => this.setState({
+				suckButtonLoading: false
+			}));
+
+		BrowserUtils.scrollToTop();
 	};
 
 	public render()
@@ -219,7 +235,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
 					{(roundStarted && !hasWinner) && (
-						<Grid item xs={12} sm={6}>
+						<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 							<BlackCard>
 								{gameData.blackCardDef?.content}
 							</BlackCard>
@@ -251,7 +267,7 @@ export class GamePlayWhite extends React.Component<Props, State>
 											variant={"contained"}
 											color={"primary"}
 											disabled={hasPlayed || revealMode || !roundStarted || !canUseMyCardsSuck}
-											onClick={this.onForfeit}
+											onClick={this.showForfeitConfirm}
 											style={{
 												marginLeft: "0.5rem"
 											}}
@@ -285,6 +301,23 @@ export class GamePlayWhite extends React.Component<Props, State>
 						</LoadingButton>
 					</Confirmation>
 				)}
+				<Dialog open={this.state.cardsSuckVisible} onClose={() => this.setState({cardsSuckVisible: false})} maxWidth={"sm"}>
+					<DialogTitle>Are you sure?</DialogTitle>
+					<DialogContent>
+						<Typography>
+							You could still win this round, but we'll automatically play a random selection from your hand, then give you new cards. Do you really want to do that?
+						</Typography>
+					</DialogContent>
+					<Divider/>
+					<DialogActions>
+						<Button onClick={this.hideForfeitConfirm} color="primary" variant={"outlined"}>
+							Cancel
+						</Button>
+						<Button onClick={this.onForfeit} color="primary" variant={"contained"}>
+							Confirm
+						</Button>
+					</DialogActions>
+				</Dialog>
 			</div>
 		);
 	}

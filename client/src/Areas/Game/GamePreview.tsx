@@ -43,7 +43,7 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 			<CopyGameLink />
 			<Divider style={{margin: "3rem 0"}} />
 			<Typography className={classes.playersLabel} variant={"h4"}>
-				Players <span style={{fontSize: "1rem"}}>({playerCount} / 50 max)</span>
+				Players <span style={{fontSize: "1rem"}}>({playerCount} / {gameData.game?.settings.playerLimit} max)</span>
 			</Typography>
 			<GameRoster />
 			{props.children}

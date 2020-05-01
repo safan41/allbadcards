@@ -107,7 +107,7 @@ export class GamePlaySpectate extends React.Component<Props, State>
 				<Divider style={{margin: "1rem 0"}}/>
 				<Grid container spacing={2} style={{justifyContent: "center"}}>
 					{(roundStarted && !hasWinner) && (
-						<Grid item xs={12} sm={6}>
+						<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 							<BlackCard>
 								{gameData.blackCardDef?.content}
 							</BlackCard>

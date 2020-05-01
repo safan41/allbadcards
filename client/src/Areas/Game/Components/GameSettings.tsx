@@ -21,7 +21,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import {SettingsBlockGame} from "./Settings/SettingsBlockGame";
-import {MdEdit} from "react-icons/all";
+import {MdEdit, MdSettings} from "react-icons/all";
 import {SettingsBlockMainPacks} from "./Settings/SettingsBlockMainPacks";
 import IconButton from "@material-ui/core/IconButton";
 import {SettingsBlockCustomPacks} from "./Settings/SettingsBlockCustomPacks";
@@ -57,6 +57,11 @@ export const GameSettings = () =>
 			<div style={{marginTop: "1rem"}}>
 				<List>
 					<ListItem>
+						<ListItemAvatar>
+							<Avatar>
+								<MdSettings style={{color: "black"}}/>
+							</Avatar>
+						</ListItemAvatar>
 						<ListItemText primary={"General"} secondary={"Basic game settings"}/>
 						<ListItemSecondaryAction style={{right: 0}}>
 							<IconButton color={"primary"} onClick={() => setGameSettingsVisible(true)}>

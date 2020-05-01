@@ -103,7 +103,7 @@ export class RevealWhites extends React.Component <Props, State>
 		const canSeeReveal = this.props.canReveal || !game.settings.hideDuringReveal;
 
 		return (
-			<Grid item xs={12} sm={6}>
+			<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
 				{(realRevealIndex >= 0 && canSeeReveal) && (
 					<>
 						<WhiteCard key={revealedIndex} style={{marginBottom: "0.5rem"}}>

@@ -1,10 +1,12 @@
-import {Express, Response} from "express";
+import {Express, Response, Request} from "express";
 import {GameManager} from "./GameManager";
 import {CardManager} from "./CardManager";
 import apicache from "apicache";
 import {logError, logMessage} from "../logger";
 import {Config} from "../../config/config";
-import {GameItem, ICardPackSummary} from "./Contract";
+import {ICardPackSummary, IPlayer} from "./Contract";
+import {UserUtils} from "../User/UserUtils";
+import shortid from "shortid";
 
 const cache = apicache.middleware;
 
@@ -23,8 +25,46 @@ const sendWithBuildVersion = (data: any, res: Response) =>
 	});
 };
 
+const playerFromReq = (req: Request): IPlayer => {
+	return {
+		guid: req.cookies["guid"],
+		secret: req.cookies["secret"]
+	};
+};
+
 export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
+	app.get("/api/user/register", async(req, res) => {
+		try
+		{
+			let guid = req.cookies["guid"];
+			if(!guid)
+			{
+				guid = shortid.generate();
+				const secret = UserUtils.generateSecret(guid);
+
+				const expires = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000));
+
+				res.cookie("secret", secret, {
+					httpOnly: true,
+					expires
+				});
+
+				res.cookie("guid", guid, {
+					expires
+				});
+			}
+
+			res.send({
+				guid
+			});
+		}
+		catch (error)
+		{
+			onError(res, error, req.url, req.query, req.body);
+		}
+	});
+
 	app.get("/api/game/get", cache("10 seconds"), async (req, res, next) =>
 	{
 		logMessage(req.url, req.query);
@@ -128,7 +168,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			const game = await GameManager.createGame(req.body.ownerGuid, req.body.nickname);
+			const player = playerFromReq(req);
+			const game = await GameManager.createGame(player, req.body.nickname);
 			sendWithBuildVersion({
 				id: game.id
 			}, res);
@@ -144,8 +185,9 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
+			const player = playerFromReq(req);
 			await GameManager.joinGame(
-				req.body.playerGuid,
+				player,
 				req.body.gameId,
 				req.body.nickname,
 				JSON.parse(req.body.isSpectating ?? "false"),
@@ -164,7 +206,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.kickPlayer(req.body.gameId, req.body.targetGuid, req.body.playerGuid);
+			const player = playerFromReq(req);
+			await GameManager.kickPlayer(req.body.gameId, req.body.targetGuid, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -179,9 +222,10 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
+			const player = playerFromReq(req);
 			await GameManager.startGame(
 				req.body.gameId,
-				req.body.ownerGuid,
+				player,
 				req.body.settings);
 
 			sendWithBuildVersion({success: true}, res);
@@ -197,9 +241,10 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
+			const player = playerFromReq(req);
 			await GameManager.updateSettings(
 				req.body.gameId,
-				req.body.ownerGuid,
+				player,
 				req.body.settings);
 
 			sendWithBuildVersion({success: true}, res);
@@ -215,10 +260,11 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
+			const player = playerFromReq(req);
 			let game = await GameManager.restartGame(req.body.gameId, req.body.playerGuid);
 			await GameManager.startGame(
 				game.id,
-				game.ownerGuid,
+				player,
 				game.settings
 			);
 
@@ -235,7 +281,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.playCard(req.body.gameId, req.body.playerGuid, req.body.cardIds);
+			const player = playerFromReq(req);
+			await GameManager.playCard(req.body.gameId, player, req.body.cardIds);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -250,7 +297,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.forfeit(req.body.gameId, req.body.playerGuid, req.body.playedCards);
+			const player = playerFromReq(req);
+			await GameManager.forfeit(req.body.gameId, player, req.body.playedCards);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -265,7 +313,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.revealNext(req.body.gameId, req.body.ownerGuid);
+			const player = playerFromReq(req);
+			await GameManager.revealNext(req.body.gameId, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -280,7 +329,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.skipBlack(req.body.gameId, req.body.ownerGuid);
+			const player = playerFromReq(req);
+			await GameManager.skipBlack(req.body.gameId, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -295,7 +345,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.startRound(req.body.gameId, req.body.ownerGuid);
+			const player = playerFromReq(req);
+			await GameManager.startRound(req.body.gameId, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -310,7 +361,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.addRandomPlayer(req.body.gameId, req.body.ownerGuid);
+			const player = playerFromReq(req);
+			await GameManager.addRandomPlayer(req.body.gameId, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -325,7 +377,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.selectWinnerCard(req.body.gameId, req.body.playerGuid, req.body.winningPlayerGuid);
+			const player = playerFromReq(req);
+			await GameManager.selectWinnerCard(req.body.gameId, player, req.body.winningPlayerGuid);
 
 			sendWithBuildVersion({success: true}, res);
 		}
@@ -340,7 +393,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		logMessage(req.url, req.body);
 		try
 		{
-			await GameManager.nextRound(req.body.gameId, req.body.playerGuid);
+			const player = playerFromReq(req);
+			await GameManager.nextRound(req.body.gameId, player);
 
 			sendWithBuildVersion({success: true}, res);
 		}

@@ -5,7 +5,7 @@
   },
   "black": [
     {
-      "content": "Excuse me, waiter. Could take this back? This soup tastes like ______.",
+      "content": "Excuse me, waiter. Could you take this back? This soup tastes like ______.",
       "pick": 1,
       "draw": 1
     },

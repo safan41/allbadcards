@@ -90,23 +90,6 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			this.update({
 				hasConnection: true
 			});
-
-			if (this.state.packs.length === 0)
-			{
-				Platform.getPacks(this.state.familyMode ? "family" : undefined)
-					.then(data =>
-					{
-						const defaultPacks = this.getDefaultPacks(data);
-
-						this.update({
-							packs: data,
-							ownerSettings: {
-								...this.state.ownerSettings,
-								includedPacks: defaultPacks
-							}
-						})
-					});
-			}
 		};
 
 		this.ws.onmessage = (e) =>
@@ -197,9 +180,10 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			location.href = location.href + "";
 		}
 
-		if(this.state.ownerSettings
+		if (this.state.ownerSettings
 			&& this.state.game
-			&& !deepEqual(prev.ownerSettings, this.state.ownerSettings))
+			&& !deepEqual(prev.ownerSettings, this.state.ownerSettings)
+			&& this.state.game.ownerGuid === UserDataStore.state.playerGuid)
 		{
 			Platform.updateSettings(
 				this.state.game.ownerGuid,
@@ -338,6 +322,23 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 					game: data as GamePayload,
 					ownerSettings: data.settings
 				});
+
+				if (this.state.packs.length === 0)
+				{
+					Platform.getPacks(this.state.familyMode ? "family" : undefined)
+						.then(data =>
+						{
+							const defaultPacks = this.getDefaultPacks(data);
+
+							this.update({
+								packs: data,
+								ownerSettings: {
+									...this.state.ownerSettings,
+									includedPacks: defaultPacks
+								}
+							})
+						});
+				}
 			})
 			.catch(e =>
 			{

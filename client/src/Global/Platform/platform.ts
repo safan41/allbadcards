@@ -68,41 +68,41 @@ class _Platform
 		return _Platform.doGet<GameItem>(`/api/game/get?gameId=${gameId}`);
 	}
 
-	public async createGame(ownerGuid: string, nickname: string)
+	public async createGame(guid: string, nickname: string)
 	{
 		this.trackEvent("create");
 
 		return _Platform.doPost<GameItem>("/api/game/create", {
-			ownerGuid,
+			guid,
 			nickname
 		});
 	}
 
-	public async joinGame(playerGuid: string, gameId: string, nickname: string, isSpectating = false)
+	public async joinGame(guid: string, gameId: string, nickname: string, isSpectating = false)
 	{
 		this.trackEvent("join", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/join", {
-			playerGuid,
+			guid,
 			gameId,
 			nickname,
 			isSpectating
 		});
 	}
 
-	public async removePlayer(gameId: string, targetGuid: string, playerGuid: string)
+	public async removePlayer(gameId: string, targetGuid: string, guid: string)
 	{
 		this.trackEvent("remove-player", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/kick", {
 			gameId,
 			targetGuid,
-			playerGuid
+			guid
 		});
 	}
 
 	public async startGame(
-		ownerGuid: string,
+		guid: string,
 		gameId: string,
 		settings: IGameSettings)
 	{
@@ -110,13 +110,13 @@ class _Platform
 
 		return _Platform.doPost<GameItem>("/api/game/start", {
 			gameId,
-			ownerGuid,
+			guid,
 			settings
 		});
 	}
 
 	public async updateSettings(
-		ownerGuid: string,
+		guid: string,
 		gameId: string,
 		settings: IGameSettings)
 	{
@@ -124,95 +124,95 @@ class _Platform
 
 		return _Platform.doPost<GameItem>("/api/game/update-settings", {
 			gameId,
-			ownerGuid,
+			guid,
 			settings
 		});
 	}
 
-	public async playCards(gameId: string, playerGuid: string, cardIds: CardId[])
+	public async playCards(gameId: string, guid: string, cardIds: CardId[])
 	{
 		this.trackEvent("play-cards", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/play-cards", {
 			gameId,
-			playerGuid,
+			guid,
 			cardIds
 		});
 	}
 
-	public async forfeit(gameId: string, playerGuid: string, playedCards: CardId[])
+	public async forfeit(gameId: string, guid: string, playedCards: CardId[])
 	{
 		this.trackEvent("my-cards-suck", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/forfeit", {
 			gameId,
-			playerGuid,
+			guid,
 			playedCards
 		});
 	}
 
-	public async restart(gameId: string, playerGuid: string)
+	public async restart(gameId: string, guid: string)
 	{
 		this.trackEvent("game-restart", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/restart", {
 			gameId,
-			playerGuid,
+			guid,
 		});
 	}
 
-	public async selectWinnerCard(gameId: string, playerGuid: string, winningPlayerGuid: string)
+	public async selectWinnerCard(gameId: string, guid: string, winningPlayerGuid: string)
 	{
 		this.trackEvent("selected-winner", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/select-winner-card", {
 			gameId,
-			playerGuid,
+			guid,
 			winningPlayerGuid
 		});
 	}
 
-	public async revealNext(gameId: string, ownerGuid: string)
+	public async revealNext(gameId: string, guid: string)
 	{
 		return _Platform.doPost<GameItem>("/api/game/reveal-next", {
 			gameId,
-			ownerGuid,
+			guid,
 		});
 	}
 
-	public async startRound(gameId: string, ownerGuid: string)
+	public async startRound(gameId: string, guid: string)
 	{
 		this.trackEvent("round-start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/start-round", {
 			gameId,
-			ownerGuid,
+			guid,
 		});
 	}
 
-	public async addRandomPlayer(gameId: string, ownerGuid: string)
+	public async addRandomPlayer(gameId: string, guid: string)
 	{
 		this.trackEvent("round-start", gameId);
 
 		return _Platform.doPost<GameItem>("/api/game/add-random-player", {
 			gameId,
-			ownerGuid,
+			guid,
 		});
 	}
 
-	public async nextRound(gameId: string, playerGuid: string)
+	public async nextRound(gameId: string, guid: string)
 	{
 		return _Platform.doPost<GameItem>("/api/game/next-round", {
 			gameId,
-			playerGuid,
+			guid,
 		});
 	}
 
-	public async skipBlack(gameId: string, ownerGuid: string)
+	public async skipBlack(gameId: string, guid: string)
 	{
 		return _Platform.doPost<GameItem>("/api/game/skip-black", {
 			gameId,
-			ownerGuid,
+			guid,
 		});
 	}
 
@@ -264,6 +264,11 @@ class _Platform
 	public async getPacks(type: "all" | "official" | "thirdParty" | "family" = "all")
 	{
 		return _Platform.doGet<ICardPackSummary[]>("/api/game/get-packnames?type=" + type);
+	}
+
+	public registerUser()
+	{
+		return _Platform.doGet<{guid: string}>(`/api/user/register`);
 	}
 }
 

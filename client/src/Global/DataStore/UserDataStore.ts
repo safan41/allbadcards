@@ -1,6 +1,8 @@
 import {DataStore} from "./DataStore";
 import shortid from "shortid";
 import {GameDataStore} from "./GameDataStore";
+import {Platform} from "../Platform/platform";
+import {ErrorDataStore} from "./ErrorDataStore";
 
 export interface IUserData
 {
@@ -13,26 +15,31 @@ class _UserDataStore extends DataStore<IUserData>
 	private static lsKey = "guid";
 
 	public static Instance = new _UserDataStore({
-		playerGuid: _UserDataStore.newOrReuseGuid(),
+		playerGuid: "",
 		wsId: null
 	});
 
-	private static newOrReuseGuid()
+	constructor(params: IUserData)
 	{
-		const stored = localStorage.getItem(_UserDataStore.lsKey);
-		const toUse = stored ||  _UserDataStore.generateGuid();
-		localStorage.setItem(_UserDataStore.lsKey, toUse);
-		return toUse;
+		super(params);
 	}
 
-	private static generateGuid()
+	private register()
 	{
-		return shortid.generate() + shortid.generate();
+		return Platform.registerUser()
+			.then(data => {
+				this.update({
+					playerGuid: data.guid
+				});
+			})
+			.catch(ErrorDataStore.add);
 	}
 
 	public initialize()
 	{
-		GameDataStore.initialize();
+		this.register().then(() => {
+			GameDataStore.initialize();
+		});
 	}
 }
 
