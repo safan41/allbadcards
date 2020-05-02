@@ -20,6 +20,9 @@ export const SettingsBlockGame: React.FC = () =>
 
 	return (
 		<List style={{paddingBottom: "1rem"}}>
+			<MakePrivate gameData={gameData} />
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
 			<RoundsRequiredField gameData={gameData}/>
 
 			<Divider style={{margin: "0 0 1rem 0"}}/>
@@ -27,6 +30,9 @@ export const SettingsBlockGame: React.FC = () =>
 
 			<Divider style={{margin: "0 0 1rem 0"}}/>
 			<PlayerLimitField gameData={gameData}/>
+
+			<Divider style={{margin: "0 0 1rem 0"}}/>
+			<WinnerBecomesCzar gameData={gameData}/>
 
 			<Divider style={{margin: "0 0 1rem 0"}}/>
 			<HideDuringReveal gameData={gameData}/>
@@ -75,6 +81,35 @@ const UrlField: React.FC<IGameDataProps> = ({
 				<TextField value={url} label="URL" variant="outlined" onChange={(e) => setOuter(e.target.value)} error={invalid}/>
 			</FormControl>
 		</ListItem>
+	);
+};
+
+const MakePrivate: React.FC<IGameDataProps> = (
+	{
+		gameData
+	}
+) =>
+{
+	const onChange = (e: ChangeEvent<{}>, v: boolean) =>
+	{
+		GameDataStore.setGamePublic(v);
+	};
+
+	return (
+		<FormControl component="fieldset" style={{width: "100%"}}>
+			<ListItem>
+				<ListItemText primary={"Make Public"} secondary={`If true, this game will be joinable by anybody from the game list page.`}/>
+				<ListItemSecondaryAction>
+					<Switch
+						edge="end"
+						color={"primary"}
+						onChange={onChange}
+						name={"isPublic"}
+						checked={gameData.ownerSettings.public}
+					/>
+				</ListItemSecondaryAction>
+			</ListItem>
+		</FormControl>
 	);
 };
 
@@ -145,6 +180,33 @@ const PlayerLimitField: React.FC<IGameDataProps> = ({
 	);
 };
 
+const WinnerBecomesCzar: React.FC<IGameDataProps> = ({
+	                                                     gameData
+                                                     }) =>
+{
+	const onChange = (e: ChangeEvent<{}>, v: boolean) =>
+	{
+		GameDataStore.setWinnerBecomesCzar(v);
+	};
+
+	return (
+		<FormControl component="fieldset" style={{width: "100%"}}>
+			<ListItem>
+				<ListItemText primary={"Winner Becomes Card Czar"} secondary={`Make the winner of the last round become the Card Czar for the next round.`}/>
+				<ListItemSecondaryAction>
+					<Switch
+						edge="end"
+						color={"primary"}
+						onChange={onChange}
+						name={"winnerBecomesCzar"}
+						checked={gameData.ownerSettings.winnerBecomesCzar}
+					/>
+				</ListItemSecondaryAction>
+			</ListItem>
+		</FormControl>
+	);
+};
+
 const HideDuringReveal: React.FC<IGameDataProps> = ({
 	                                                    gameData
                                                     }) =>
@@ -172,9 +234,11 @@ const HideDuringReveal: React.FC<IGameDataProps> = ({
 	);
 };
 
-const SkipReveal: React.FC<IGameDataProps> = ({
-	                                              gameData
-                                              }) =>
+const SkipReveal: React.FC<IGameDataProps> = (
+	{
+		gameData
+	}
+) =>
 {
 	const onChange = (e: ChangeEvent<{}>, v: boolean) =>
 	{

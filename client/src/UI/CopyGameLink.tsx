@@ -1,10 +1,9 @@
 import {CopyToClipboard} from "react-copy-to-clipboard";
 import React, {useEffect, useState} from "react";
 import {GameDataStore} from "../Global/DataStore/GameDataStore";
-import {Typography} from "@material-ui/core";
+import {createStyles, Typography} from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import Chip from "@material-ui/core/Chip";
-import {Twemoji} from "react-emoji-render";
 
 export interface ICopyGameLinkProps
 {
@@ -12,16 +11,16 @@ export interface ICopyGameLinkProps
 	buttonSize?: "small" | "medium" | "large";
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => createStyles({
 	link: {
-		color: "black",
+		color: theme.palette.text.primary,
 		textDecoration: "none",
 		marginRight: "1rem",
 		"&:hover": {
 			textDecoration: "underline"
 		}
 	}
-});
+}));
 
 export const CopyGameLink: React.FC<ICopyGameLinkProps> = (props) =>
 {

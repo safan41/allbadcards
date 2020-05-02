@@ -1,4 +1,4 @@
-import {ListItem, ListItemText, Typography} from "@material-ui/core";
+import {ButtonGroup, ListItem, ListItemText, Typography} from "@material-ui/core";
 import React, {useEffect, useState} from "react";
 import Button from "@material-ui/core/Button";
 import {Twemoji} from "react-emoji-render";
@@ -35,6 +35,14 @@ export const Support = () =>
 		>
 			Buy me a coffee
 		</Button>,
+		<a href='https://ko-fi.com/A76217J' target='_blank' onClick={() => Platform.trackEvent("support-link-click", "kofi-coffee")}>
+			<img
+				height='36'
+				style={{border: 0, height: 36, marginTop: "1rem"}}
+				src='https://cdn.ko-fi.com/cdn/kofi2.png?v=2'
+				alt='Buy Me a Coffee at ko-fi.com'
+			/>
+		</a>,
 		<Button
 			variant={"contained"}
 			color={"primary"}
@@ -56,22 +64,24 @@ export const Support = () =>
 			marginBottom: "8rem",
 			textAlign: "center"
 		}}>
-			<Typography variant={"h5"}>Did you enjoy the game? One dude made this site and it runs on donations!</Typography>
+			<Typography variant={"h6"}>Did you enjoy the game? One dude made this site and it runs on donations!</Typography>
+			{thankYouButton}
 			<Typography style={{marginTop: "1rem"}}>
 				<List>
 					<ListItem>
-						<ListItemText style={{textAlign: "center"}} primary={<strong>vennmo</strong>} secondary={<>
-							<a className={classes.link} href={"https://venmo.com/allbadcards"} target={"_blank"}>@allbadcards <RiExternalLinkLine/></a>
-						</>}/>
-					</ListItem>
-					<ListItem>
-						<ListItemText style={{textAlign: "center"}} primary={<strong>cash app</strong>} secondary={<>
-							<a className={classes.link} href={"https://cash.app/$allbadcards"} target={"_blank"}>$allbadcards <RiExternalLinkLine/></a>
+						<ListItemText style={{textAlign: "center"}} primary={<>
+							<ButtonGroup>
+								<Button endIcon={<RiExternalLinkLine/>} variant={"outlined"} size={"small"} className={classes.link} href={"https://venmo.com/allbadcards"} target={"_blank"}>
+									venmo
+								</Button>
+								<Button endIcon={<RiExternalLinkLine/>} variant={"outlined"} size={"small"} className={classes.link} href={"https://cash.app/$allbadcards"} target={"_blank"}>
+									cash app
+								</Button>
+							</ButtonGroup>
 						</>}/>
 					</ListItem>
 				</List>
 			</Typography>
-			{thankYouButton}
 		</div>
 	);
 };

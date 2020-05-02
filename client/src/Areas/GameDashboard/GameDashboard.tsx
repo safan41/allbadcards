@@ -1,5 +1,5 @@
 import * as React from "react";
-import {FaPlus, MdArrowForward} from "react-icons/all";
+import {FaPlus, MdArrowForward, MdArrowUpward} from "react-icons/all";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, withRouter} from "react-router";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
@@ -14,8 +14,8 @@ import {GameDataStore} from "../../Global/DataStore/GameDataStore";
 import {Divider, Grid} from "@material-ui/core";
 import {TwitterTimelineEmbed} from "react-twitter-embed";
 import {LoadingButton} from "../../UI/LoadingButton";
-import Hidden from "@material-ui/core/Hidden";
 import {GameItem} from "../../Global/Platform/Contract";
+import {Link} from "react-router-dom";
 
 interface IGameDashboardProps extends RouteComponentProps
 {
@@ -94,6 +94,8 @@ class GameDashboard extends React.Component<Props, State>
 
 	public render()
 	{
+		const mobile = matchMedia('(max-width:600px)');
+
 		return (
 			<Container style={{textAlign: "center"}}>
 				<Typography>the best cards against humanity clone!</Typography>
@@ -107,25 +109,39 @@ class GameDashboard extends React.Component<Props, State>
 
 				{!GameDataStore.state.familyMode && (
 					<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "1rem"}}>
-						<Button  href={"https://not.allbad.cards"}>
+						<Button href={"https://not.allbad.cards"}>
 							Family Edition &nbsp; <MdArrowForward/>
 						</Button>
 					</ButtonGroup>
 				)}
 				<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "2rem"}}>
-					<LoadingButton
-						loading={this.state.createLoading}
-						variant="contained"
-						color="primary"
-						size="large"
-						style={{
-							fontSize: "1.5rem"
-						}}
-						onClick={this.createGame}
-						startIcon={<FaPlus/>}
-					>
-						New Game
-					</LoadingButton>
+					<ButtonGroup orientation={mobile ? "vertical" : "horizontal"}>
+						<Button
+							variant="outlined"
+							color="default"
+							size="large"
+							style={{
+								fontSize: "1.5rem"
+							}}
+							component={p => <Link to={"/games"} {...p} />}
+							startIcon={<MdArrowUpward/>}
+						>
+							Join Game
+						</Button>
+						<LoadingButton
+							loading={this.state.createLoading}
+							variant="contained"
+							color="primary"
+							size="large"
+							style={{
+								fontSize: "1.5rem"
+							}}
+							onClick={this.createGame}
+							startIcon={<FaPlus/>}
+						>
+							New Game
+						</LoadingButton>
+					</ButtonGroup>
 				</ButtonGroup>
 				<NicknameDialog
 					open={this.state.nicknameDialogOpen}
@@ -141,6 +157,16 @@ class GameDashboard extends React.Component<Props, State>
 					<Grid container>
 						<Grid item md={7} xs={12}>
 							<Typography>
+								<strong>Updates - 5/1</strong>
+								<li>Added support for creating and browsing public games</li>
+								<li>Added Dark Mode switch in footer</li>
+								<li>Modified the method for user identification to reduce hackability of games (in preparation for public games list)</li>
+								<li>Added new option (off by default) for the winning player to become the new Card Czar</li>
+								<li>Fix for game restart not working</li>
+								<li>Improved layout for larger screens</li>
+								<li>Fix for some mobile devices not being able to use My Cards Suck options</li>
+								<li>Card typo fixes</li>
+								<br/>
 								<strong>Updates - 4/30</strong>
 								<li>Added option to hide white cards during reveal</li>
 								<li>Added option to limit the maximum number of players for a game</li>
@@ -169,7 +195,7 @@ class GameDashboard extends React.Component<Props, State>
 				</Paper>
 				<Paper style={{padding: "1rem", marginTop: "3rem"}} elevation={5}>
 					<Typography variant={"caption"}>
-						Cards Against Humanity by <a href={"https://cardsagainsthumanity.com"}>Cards Against Humanity</a> LLC is licensed under CC BY-NC-SA 2.0.
+						Cards Against Humanity by <a href={"https://cardsagainsthumanity.com"} style={{color: "lightblue"}}>Cards Against Humanity</a> LLC is licensed under CC BY-NC-SA 2.0.
 					</Typography>
 				</Paper>
 			</Container>

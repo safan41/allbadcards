@@ -10,16 +10,13 @@ class _Database
 	public static Instance = new _Database();
 	private _client: MongoClient;
 	private url: string;
-	private user: string;
-	private pwd: string;
+	private initialized = false;
 
 	constructor()
 	{
 		const keysFile = fs.readFileSync(path.resolve(process.cwd(), "./config/keys.json"), "utf8");
 		const keys = JSON.parse(keysFile)[0];
 		this.url = keys.mongo[Config.Environment];
-		this.user = keys.mongoUser;
-		this.pwd = keys.mongoKey;
 	}
 
 	private get client()
@@ -34,6 +31,13 @@ class _Database
 
 	public initialize()
 	{
+		if (this.initialized)
+		{
+			return;
+		}
+
+		this.initialized = true;
+
 		logMessage("Connecting to mongo");
 		MongoClient.connect(this.url, {
 			useNewUrlParser: true,
@@ -55,7 +59,10 @@ class _Database
 			});
 
 			await db.createIndex("cardcast", {
-				id: 1
+				id: 1,
+				["settings.public"]: 1,
+				dateCreated: -1,
+				dateUpdated: -1
 			});
 		});
 	}

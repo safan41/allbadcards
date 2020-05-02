@@ -7,13 +7,14 @@ import {Config} from "../../config/config";
 import {ICardPackSummary, IPlayer} from "./Contract";
 import {UserUtils} from "../User/UserUtils";
 import shortid from "shortid";
+import {GameListManager} from "./GameListManager";
 
 const cache = apicache.middleware;
 
 const onError = (res: Response, error: Error, ...more: any[]) =>
 {
-	res.status(500).send({message: error.message, stack: error.stack});
 	logError({message: error.message, stack: error.stack}, more);
+	res.status(500).send({message: error.message, stack: error.stack});
 	throw error;
 };
 
@@ -25,7 +26,8 @@ const sendWithBuildVersion = (data: any, res: Response) =>
 	});
 };
 
-const playerFromReq = (req: Request): IPlayer => {
+const playerFromReq = (req: Request): IPlayer =>
+{
 	return {
 		guid: req.cookies["guid"],
 		secret: req.cookies["secret"]
@@ -34,11 +36,12 @@ const playerFromReq = (req: Request): IPlayer => {
 
 export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 {
-	app.get("/api/user/register", async(req, res) => {
+	app.get("/api/user/register", async (req, res) =>
+	{
 		try
 		{
 			let guid = req.cookies["guid"];
-			if(!guid)
+			if (!guid)
 			{
 				guid = shortid.generate();
 				const secret = UserUtils.generateSecret(guid);
@@ -58,6 +61,21 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 			res.send({
 				guid
 			});
+		}
+		catch (error)
+		{
+			onError(res, error, req.url, req.query, req.body);
+		}
+	});
+
+	app.get("/api/games/public", cache("1 minute"), async (req, res) =>
+	{
+		logMessage(req.url, req.query);
+
+		try
+		{
+			const games = await GameListManager.getGames(parseInt(req.query.zeroBasedPage));
+			sendWithBuildVersion({games}, res);
 		}
 		catch (error)
 		{
@@ -109,7 +127,8 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 			switch (which)
 			{
 				case "all":
-					packIds = CardManager.packTypeDefinition.types.reduce((acc, type) => {
+					packIds = CardManager.packTypeDefinition.types.reduce((acc, type) =>
+					{
 						acc.push(...type.packs);
 						return acc;
 					}, [] as string[]);
@@ -261,7 +280,7 @@ export const RegisterGameEndpoints = (app: Express, clientFolder: string) =>
 		try
 		{
 			const player = playerFromReq(req);
-			let game = await GameManager.restartGame(req.body.gameId, req.body.playerGuid);
+			let game = await GameManager.restartGame(req.body.gameId, player);
 			await GameManager.startGame(
 				game.id,
 				player,

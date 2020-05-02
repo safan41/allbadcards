@@ -143,12 +143,12 @@ export class ShowWinner extends React.Component<Props, State>
 		return (
 			<>
 				<Grid style={{margin: "3rem 0 0.5rem", justifyContent: "center"}} container spacing={3}>
-					<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
+					<Grid item xs={12} sm={6} md={4} lg={3}>
 						<BlackCard>
 							{blackCardContent}
 						</BlackCard>
 					</Grid>
-					<Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
+					<Grid item xs={12} sm={6} md={4} lg={3}>
 						<WhiteCard>
 							{winnerCards.map(card => card && (
 								<>
@@ -197,12 +197,12 @@ export class ShowWinner extends React.Component<Props, State>
 									</ListItemText>
 								</div>
 							</div>
-							<Divider style={{margin: "1rem 0"}}/>
-							<Typography variant={"h4"}>
-								Winner: {winner?.nickname}!
-							</Typography>
 						</>
 					)}
+					<Divider style={{margin: "1rem 0"}}/>
+					<Typography variant={"h4"}>
+						Winner: {winner?.nickname}!
+					</Typography>
 					<div style={{marginTop: "1rem"}}>
 						<Typography>Scoreboard</Typography>
 						<List>

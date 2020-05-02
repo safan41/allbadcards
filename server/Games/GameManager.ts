@@ -53,9 +53,18 @@ class _GameManager
 		return Database.db.collection<GameItem>("games");
 	}
 
-	private validateUser(user: IPlayer)
+	private validateUser(user: IPlayer, game?: GameItem)
 	{
-		if(!UserUtils.validateUser(user))
+		if (game)
+		{
+			const creationDate = game.dateCreated;
+			if (creationDate < new Date(1588317168552))
+			{
+				return true;
+			}
+		}
+
+		if (!UserUtils.validateUser(user))
 		{
 			throw new Error("You cannot perform this action because you are not this user.");
 		}
@@ -209,6 +218,8 @@ class _GameManager
 
 	public async updateGame(newGame: GameItem)
 	{
+		newGame.dateUpdated = new Date();
+
 		await Database.db.collection<GameItem>("games").updateOne({
 			id: newGame.id
 		}, {
@@ -260,13 +271,16 @@ class _GameManager
 
 		try
 		{
+			const now = new Date();
+
 			const initialGameItem: GameItem = {
 				id: gameId,
 				roundIndex: 0,
 				roundStarted: false,
 				ownerGuid,
 				chooserGuid: null,
-				dateCreated: new Date(),
+				dateCreated: now,
+				dateUpdated: now,
 				players: {[ownerGuid]: _GameManager.createPlayer(ownerGuid, nickname, false, false)},
 				playerOrder: [],
 				spectators: {},
@@ -282,15 +296,16 @@ class _GameManager
 				revealIndex: -1,
 				lastWinner: undefined,
 				settings: {
+					public: false,
 					hideDuringReveal: false,
 					skipReveal: false,
 					roundsToWin,
 					password,
-					public: false,
 					playerLimit: 50,
 					inviteLink: null,
 					includedPacks: [],
-					includedCardcastPacks: []
+					includedCardcastPacks: [],
+					winnerBecomesCzar: false
 				}
 			};
 
@@ -314,11 +329,11 @@ class _GameManager
 
 	public async joinGame(player: IPlayer, gameId: string, nickname: string, isSpectating: boolean, isRandom: boolean)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		if (Object.keys(existingGame.players).length >= existingGame.settings.playerLimit)
 		{
@@ -359,11 +374,11 @@ class _GameManager
 
 	public async kickPlayer(gameId: string, targetGuid: string, owner: IPlayer)
 	{
-		this.validateUser(owner);
-
 		const ownerGuid = owner.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(owner, existingGame);
 
 		if (existingGame.ownerGuid !== ownerGuid && targetGuid !== ownerGuid)
 		{
@@ -394,8 +409,6 @@ class _GameManager
 
 	public async nextRound(gameId: string, chooser: IPlayer)
 	{
-		this.validateUser(chooser);
-
 		const chooserGuid = chooser.guid;
 
 		if (gameId in this.gameRoundTimers)
@@ -405,6 +418,8 @@ class _GameManager
 
 		const existingGame = await this.getGame(gameId);
 
+		this.validateUser(chooser, existingGame);
+
 		if (existingGame.chooserGuid !== chooserGuid)
 		{
 			throw new Error("You are not the chooser!");
@@ -412,8 +427,6 @@ class _GameManager
 
 		let newGame = {...existingGame};
 
-		// Remove last winner
-		newGame.lastWinner = undefined;
 		// Reset white card reveal
 		newGame.revealIndex = -1;
 
@@ -431,6 +444,13 @@ class _GameManager
 		const chooserIndex = newGame.roundIndex % nonRandomPlayerGuids.length;
 		newGame.chooserGuid = nonRandomPlayerGuids[chooserIndex];
 
+		if (newGame.settings.winnerBecomesCzar && newGame.lastWinner && !newGame.lastWinner.isRandom)
+		{
+			newGame.chooserGuid = newGame.lastWinner.guid;
+		}
+
+		// Remove last winner
+		newGame.lastWinner = undefined;
 
 		// Remove the played white card from each player's hand
 		newGame.players = playerGuids.reduce((acc, playerGuid) =>
@@ -466,11 +486,11 @@ class _GameManager
 		settings: IGameSettings,
 	)
 	{
-		this.validateUser(owner);
-
 		const ownerGuid = owner.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(owner, existingGame);
 
 		if (existingGame.ownerGuid !== ownerGuid)
 		{
@@ -528,11 +548,12 @@ class _GameManager
 		player: IPlayer
 	)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
+
 		const newGame = {...existingGame};
 
 		if (existingGame.ownerGuid !== playerGuid)
@@ -569,9 +590,9 @@ class _GameManager
 		const existingGame = await this.getGame(gameId);
 		const playerData = existingGame.players[playerGuid];
 		const isRandom = playerData.isRandom;
-		if(!isRandom)
+		if (!isRandom)
 		{
-			this.validateUser(player);
+			this.validateUser(player, existingGame);
 		}
 
 		const newGame = {...existingGame};
@@ -585,11 +606,11 @@ class _GameManager
 
 	public async forfeit(gameId: string, player: IPlayer, playedCards: CardId[])
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		const newGame = {...existingGame};
 
@@ -614,11 +635,11 @@ class _GameManager
 
 	public async revealNext(gameId: string, player: IPlayer)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		if (existingGame.chooserGuid !== playerGuid)
 		{
@@ -639,11 +660,11 @@ class _GameManager
 
 	public async skipBlack(gameId: string, player: IPlayer)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		if (existingGame.chooserGuid !== playerGuid)
 		{
@@ -660,11 +681,11 @@ class _GameManager
 
 	public async startRound(gameId: string, player: IPlayer)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		if (existingGame.chooserGuid !== playerGuid)
 		{
@@ -741,11 +762,11 @@ class _GameManager
 
 	public async selectWinnerCard(gameId: string, player: IPlayer, winnerPlayerGuid: string)
 	{
-		this.validateUser(player);
-
 		const playerGuid = player.guid;
 
 		const existingGame = await this.getGame(gameId);
+
+		this.validateUser(player, existingGame);
 
 		if (existingGame.chooserGuid !== playerGuid)
 		{

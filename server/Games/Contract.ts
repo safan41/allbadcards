@@ -26,15 +26,16 @@ export interface CardId
 
 export interface IGameSettings
 {
+	public: boolean;
 	hideDuringReveal: boolean;
 	skipReveal: boolean;
-	public: boolean;
 	playerLimit: number;
 	password: string | null;
 	roundsToWin: number;
 	inviteLink: string | null;
 	includedPacks: string[];
 	includedCardcastPacks: string[];
+	winnerBecomesCzar: boolean;
 }
 
 export interface GameItem
@@ -46,6 +47,7 @@ export interface GameItem
 	chooserGuid: string | null;
 	started: boolean;
 	dateCreated: Date;
+	dateUpdated: Date;
 	players: PlayerMap;
 	spectators: PlayerMap;
 	pendingPlayers: PlayerMap;

@@ -9,6 +9,7 @@ import {MuiThemeProvider} from "@material-ui/core";
 import {SimplePaletteColorOptions} from "@material-ui/core/styles";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
+import CssBaseline from "@material-ui/core/CssBaseline";
 
 require('es6-promise').polyfill();
 const promiseFinally = require('promise.prototype.finally');
@@ -28,14 +29,18 @@ const secondary: SimplePaletteColorOptions = {
 	light: "#222",
 };
 
+const savedTheme = localStorage.getItem("theme") as "light" | "dark";
+const setTheme = savedTheme ? savedTheme : "light";
+
 const theme = createMuiTheme({
 	palette: {
 		primary,
 		secondary,
+		type: setTheme,
 	},
 });
 
-if(!location.hostname.includes("local"))
+if (!location.hostname.includes("local"))
 {
 	Sentry.init({
 		dsn: "https://6d23e717863b4e2e9870dad240f4e965@o377988.ingest.sentry.io/5200785",
@@ -72,6 +77,7 @@ ReactGA.pageview(window.location.pathname + window.location.search);
 ReactDOM.render(
 	<BrowserRouter>
 		<MuiThemeProvider theme={theme}>
+			<CssBaseline/>
 			<App/>
 		</MuiThemeProvider>
 	</BrowserRouter>

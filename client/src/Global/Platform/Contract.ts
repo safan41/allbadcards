@@ -1,4 +1,5 @@
 import {CardPackMap} from "../../../../server/Games/Contract";
+import {WithBuildVersion} from "./platform";
 
 export type PlayerMap = { [key: string]: GamePlayer };
 
@@ -29,6 +30,12 @@ export interface IGameSettings
 	inviteLink: string | null;
 	includedPacks: string[];
 	includedCardcastPacks: string[];
+	winnerBecomesCzar: boolean;
+}
+
+export interface GamesList extends WithBuildVersion
+{
+	games: GameItem[];
 }
 
 export interface GameItem

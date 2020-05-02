@@ -38,6 +38,9 @@ export class Routes extends React.Component<Props, State>
 				<Route path={SiteRoutes.Game.path}>
 					<Suspender importer={() => import("../Areas/Game/Game")}/>
 				</Route>
+				<Route path={SiteRoutes.Games.path}>
+					<Suspender importer={() => import("../Areas/GameList/GameList")}/>
+				</Route>
 			</>
 		);
 	}

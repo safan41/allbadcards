@@ -1,20 +1,10 @@
 import * as React from "react";
 import {useEffect, useState} from "react";
-import {AppBar, DialogTitle} from "@material-ui/core";
+import {AppBar, Button, ButtonGroup, CardContent, CardMedia, Container, Dialog, DialogContent, DialogTitle, List, ListItem, ListItemText, Paper, styled, Switch, useMediaQuery} from "@material-ui/core";
 import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
-import CardMedia from '@material-ui/core/CardMedia';
-import Container from "@material-ui/core/Container";
-import {makeStyles} from "@material-ui/styles";
-import CardContent from "@material-ui/core/CardContent";
 import {Routes} from "./Routes";
 import {UserDataStore} from "../Global/DataStore/UserDataStore";
-import styled from "@material-ui/styles/styled";
-import Paper from "@material-ui/core/Paper";
 import {MdBugReport, MdPeople, MdShare, TiLightbulb} from "react-icons/all";
-import Button from "@material-ui/core/Button";
-import Dialog from "@material-ui/core/Dialog";
-import DialogContent from "@material-ui/core/DialogContent";
 import {GameRoster} from "../Areas/Game/Components/GameRoster";
 import {Link, matchPath} from "react-router-dom";
 import {CopyGameLink} from "../UI/CopyGameLink";
@@ -24,18 +14,14 @@ import {SiteRoutes} from "../Global/Routes/Routes";
 import ReactGA from "react-ga";
 import classNames from "classnames";
 import Helmet from "react-helmet";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
-import ButtonGroup from "@material-ui/core/ButtonGroup";
 import {useDataStore} from "../Global/Utils/HookUtils";
 import {ErrorDataStore} from "../Global/DataStore/ErrorDataStore";
-import List from "@material-ui/core/List";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItem from "@material-ui/core/ListItem";
 import {ErrorBoundary} from "./ErrorBoundary";
-import {Alert} from "@material-ui/lab";
-import Snackbar from "@material-ui/core/Snackbar";
+import {BrowserUtils} from "../Global/Utils/BrowserUtils";
+import {createStyles, Theme, Typography} from "@material-ui/core";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => createStyles({
 	logoIcon: {
 		height: "2rem",
 		width: "auto",
@@ -55,7 +41,7 @@ const useStyles = makeStyles({
 		fontSize: "1.5rem"
 	},
 	logo: {
-		color: "#000",
+		color: theme.palette.text.primary,
 		textDecoration: "none",
 		display: "flex",
 		alignItems: "center",
@@ -68,7 +54,7 @@ const useStyles = makeStyles({
 		display: "flex",
 		justifyContent: "center"
 	}
-});
+}));
 
 const OuterContainer = styled(Container)({
 	background: "#EEE",
@@ -90,6 +76,8 @@ const App: React.FC = () =>
 	const appBarClasses = classNames(classes.appBar, {
 		[classes.centerBar]: isHome
 	});
+
+	history.listen(() => BrowserUtils.scrollToTop());
 
 	useEffect(() =>
 	{
@@ -127,7 +115,7 @@ const App: React.FC = () =>
 			</Helmet>
 			<OuterContainer>
 				<Paper elevation={10}>
-					<Container maxWidth={"xl"} style={{position: "relative", padding: 0, background: "#FFF", minHeight: "100vh"}}>
+					<Container maxWidth={"lg"} style={{position: "relative", padding: 0, minHeight: "100vh"}}>
 						<CardMedia>
 							<AppBar color={"transparent"} position="static" elevation={0}>
 								<Toolbar className={appBarClasses}>
@@ -149,11 +137,22 @@ const App: React.FC = () =>
 							</ErrorBoundary>
 						</CardContent>
 					</Container>
+					<div style={{textAlign: "center"}}>
+						Dark Mode
+						<Switch
+							onChange={e =>
+							{
+								localStorage.setItem("theme", e.target.checked ? "dark" : "light");
+								location.reload();
+							}}
+							checked={localStorage.getItem("theme") === "dark"}
+						/>
+					</div>
 					<div style={{textAlign: "center", padding: "0.5rem 0"}}>
 						<ButtonGroup style={{margin: "1rem 0 2rem"}}>
 							<Button
 								size={"small"}
-								color={"primary"}
+								color={"default"}
 								variant={"outlined"}
 								href={bugReportUrl}
 								target={"_blank"}
@@ -164,7 +163,7 @@ const App: React.FC = () =>
 							</Button>
 							<Button
 								size={"small"}
-								color={"primary"}
+								color={"default"}
 								variant={"outlined"}
 								startIcon={<TiLightbulb/>}
 								href={featureRequestUrl}
@@ -175,7 +174,7 @@ const App: React.FC = () =>
 							</Button>
 						</ButtonGroup>
 						<Typography>
-							&copy; {year}. Created by <a href={"http://jakelauer.com"}>Jake Lauer</a> (<a href={"https://reddit.com/u/HelloControl_"}>HelloControl_</a>)
+							&copy; {year}. Created by <a href={"http://jakelauer.com"} style={{color: "lightblue"}}>Jake Lauer</a> (<a style={{color: "lightblue"}} href={"https://reddit.com/u/HelloControl_"}>HelloControl_</a>)
 						</Typography>
 					</div>
 				</Paper>

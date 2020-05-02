@@ -1,37 +1,15 @@
 import Divider from "@material-ui/core/Divider";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Button from "@material-ui/core/Button";
-import {ListItemSecondaryAction, Typography} from "@material-ui/core";
-import FormGroup from "@material-ui/core/FormGroup";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
+import {createStyles, ListItemSecondaryAction, Typography} from "@material-ui/core";
 import React from "react";
 import {useDataStore} from "../../../../Global/Utils/HookUtils";
 import {GameDataStore} from "../../../../Global/DataStore/GameDataStore";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
-import makeStyles from "@material-ui/styles/makeStyles/makeStyles";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
 import List from "@material-ui/core/List";
 import Switch from "@material-ui/core/Switch";
-
-
-const useStyles = makeStyles({
-	whiteBox: {
-		height: "1rem",
-		border: "1px solid black",
-		padding: 5
-	},
-	blackBox: {
-		marginLeft: 20,
-		padding: 5,
-		height: "1rem",
-		background: "black",
-		border: "1px solid black",
-		color: "white",
-	}
-});
 
 export const SettingsBlockMainPacks = () =>
 {
@@ -77,8 +55,6 @@ export const SettingsBlockMainPacks = () =>
 
 		GameDataStore.setIncludedPacks(Array.from(new Set([...gameData.ownerSettings.includedPacks, ...packs])));
 	};
-
-	const classes = useStyles();
 
 	const mobile = useMediaQuery('(max-width:600px)');
 

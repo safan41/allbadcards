@@ -1,7 +1,7 @@
 import React from "react";
-import makeStyles from "@material-ui/core/styles/makeStyles";
 import classNames from "classnames";
-import {Typography} from "@material-ui/core";
+import {createStyles, Theme, Typography} from "@material-ui/core";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 import Grid from "@material-ui/core/Grid";
 import {Platform} from "../../Global/Platform/platform";
 import Tooltip from "@material-ui/core/Tooltip";
@@ -9,7 +9,7 @@ import Card from "@material-ui/core/Card";
 import CardMedia from "@material-ui/core/CardMedia";
 import CardContent from "@material-ui/core/CardContent";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => createStyles({
 	callout: {
 		textAlign: "center",
 		marginTop: "10vh"
@@ -33,7 +33,7 @@ const useStyles = makeStyles({
 			justifyContent: "center",
 			width: "100%",
 			height: "100%",
-			color: "#BBB",
+			color: theme.palette.secondary,
 			textDecoration: "none",
 			transition: "0.25s",
 			"&:hover": {
@@ -54,7 +54,7 @@ const useStyles = makeStyles({
 	hasSponsor: {
 		border: "none"
 	}
-});
+}));
 
 interface ISponsor
 {
@@ -88,11 +88,19 @@ export const SponsorList = (props: {familyMode: boolean}) =>
 			familyOnly: false
 		},
 		{
+			byline: "🚀 Reboot during quarantine",
+			url: "https://www.reboot-drink.com/",
+			familyOnly: false,
+			src: "/sponsors/reboot.jpg"
+		},
+		{
 			byline: "🌿 Earth-friendly products for body & bath 🌼",
 			url: "https://www.justlikejane.com/?source=abc",
 			src: "/sponsors/justlikejane.jpg",
 			familyOnly: true
 		},
+		undefined,
+		undefined,
 		undefined,
 		undefined
 	];
@@ -167,6 +175,17 @@ export const Sponsor: React.FC<ISponsorProps> = (props) =>
 	);
 };
 
+const useStylesBootstrap = makeStyles((theme: Theme) => ({
+	arrow: {
+		color: theme.palette.common.black,
+	},
+	tooltip: {
+		backgroundColor: theme.palette.common.black,
+		fontSize: "0.8rem",
+		textAlign: "center"
+	},
+}));
+
 const SponsorInner: React.FC<ISponsorProps> = (props) =>
 {
 	const url = props.sponsor?.url ?? "https://www.patreon.com/user?u=32889715";
@@ -199,11 +218,13 @@ const SponsorInner: React.FC<ISponsorProps> = (props) =>
 		</a>
 	);
 
+	const classes = useStylesBootstrap();
+
 	return (
 		hasSponsor
 			? link
 			: (
-				<Tooltip title={"Become a patreon sponsor, or email allbadcards[at]gmail.com for other options."}>
+				<Tooltip arrow classes={classes} title={"Become a Patreon sponsor. Email allbadcards[at]gmail.com for traffic information."}>
 					{link}
 				</Tooltip>
 			)

@@ -1,5 +1,5 @@
 import GameStart from "./GameStart";
-import {RouteComponentProps, useHistory, withRouter} from "react-router";
+import {RouteComponentProps, withRouter} from "react-router";
 import React from "react";
 import GameJoin from "./GameJoin";
 import {GameDataStore, IGameDataStorePayload} from "../../Global/DataStore/GameDataStore";
@@ -8,7 +8,7 @@ import {IUserData, UserDataStore} from "../../Global/DataStore/UserDataStore";
 import {GamePlayBlack} from "./GamePlayBlack";
 import Helmet from "react-helmet";
 import {GamePlaySpectate} from "./GamePlaySpectate";
-import {Typography} from "@material-ui/core";
+import {Dialog, DialogContent, Typography} from "@material-ui/core";
 import {ContainerProgress} from "../../UI/ContainerProgress";
 import {LoadingButton} from "../../UI/LoadingButton";
 import {Support} from "./Components/Support";
@@ -29,11 +29,13 @@ interface IGameState
 	userData: IUserData;
 	restartLoading: boolean;
 	restartDelayed: boolean;
+	showSupport: boolean;
 }
 
 class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 {
-	private delayTimeout = 0;
+	private supportDelayTimeout = 0;
+	private restartDelayTimeout = 0;
 
 	constructor(props: RouteComponentProps<IGameParams>)
 	{
@@ -44,6 +46,7 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 			userData: UserDataStore.state,
 			restartLoading: false,
 			restartDelayed: true,
+			showSupport: false
 		};
 	}
 
@@ -76,15 +79,31 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 	{
 		const hadWinner = this.getWinnerFromState(prevState);
 		const hasWinner = this.getWinnerFromState(this.state);
-		if(!hadWinner && hasWinner && this.delayTimeout === 0)
+		if (!hadWinner && hasWinner && this.supportDelayTimeout === 0)
 		{
-			this.delayTimeout = window.setTimeout(() => {
+			this.supportDelayTimeout = window.setTimeout(() =>
+			{
 				this.setState({
-					restartDelayed: false
+					restartDelayed: true,
+					showSupport: true
 				});
-			}, 7000);
+
+				setTimeout(() => this.setState({
+					restartDelayed: false
+				}), 5000);
+
+			}, 2000);
 		}
 	}
+
+	private getGameWinnerFromState = (state: IGameState) =>
+	{
+		const settings = state.gameData.game?.settings;
+		const players = state.gameData.game?.players ?? {};
+		const playerGuids = Object.keys(players);
+		const winnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 99));
+		return winnerGuid;
+	};
 
 	private restartClick = (playerGuid: string) =>
 	{
@@ -142,55 +161,60 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 					<title>{title}</title>
 				</Helmet>
 				<div style={{minHeight: "100vh"}}>
-				{!winnerGuid && settings?.inviteLink && (
-					<Typography variant={"caption"}>
-						Chat/Video Invite: <a href={settings.inviteLink} target={"_blank"} rel={"nofollow noreferrer"}>{inviteLink}</a>
-					</Typography>
-				)}
-				{winnerGuid && (
-					<div>
-						<Typography variant={"h3"} style={{textAlign: "center"}}>Game over! {players?.[winnerGuid].nickname} is the winner.</Typography>
+					{!winnerGuid && settings?.inviteLink && (
+						<Typography variant={"caption"}>
+							Chat/Video Invite: <a href={settings.inviteLink} target={"_blank"} rel={"nofollow noreferrer"}>{inviteLink}</a>
+						</Typography>
+					)}
+					{winnerGuid && (
+						<ShowWinner/>
+					)}
+					{!winnerGuid && (
+						<ErrorBoundary>
+							{(!started || !(amInGame || amSpectating)) && (
+								<BeforeGame gameId={id} isOwner={isOwner}/>
+							)}
 
-						<Support />
+							{started && amInGame && !isChooser && (
+								<GamePlayWhite/>
+							)}
 
-						{playerGuid === ownerGuid && (
-							<div style={{
-								marginTop: "7rem",
-								textAlign: "center"
-							}}>
-								<LoadingButton loading={this.state.restartLoading || this.state.restartDelayed} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>
-									Restart this game?
-								</LoadingButton>
-							</div>
-						)}
+							{started && amInGame && isChooser && (
+								<GamePlayBlack/>
+							)}
 
-						<ShowWinner />
-					</div>
-				)}
-				{!winnerGuid && (
-					<ErrorBoundary>
-						{(!started || !(amInGame || amSpectating)) && (
-							<BeforeGame gameId={id} isOwner={isOwner}/>
-						)}
-
-						{started && amInGame && !isChooser && (
-							<GamePlayWhite/>
-						)}
-
-						{started && amInGame && isChooser && (
-							<GamePlayBlack/>
-						)}
-
-						{started && amSpectating && (
-							<GamePlaySpectate/>
-						)}
-					</ErrorBoundary>
-				)}
+							{started && amSpectating && (
+								<GamePlaySpectate/>
+							)}
+						</ErrorBoundary>
+					)}
 				</div>
 				<Grid style={{marginTop: "5rem"}}>
-					<Divider style={{margin: "1rem 0"}} />
+					<Divider style={{margin: "1rem 0"}}/>
 					<Sponsor sponsor={undefined} isDiamondSponsor={true}/>
 				</Grid>
+				{winnerGuid && (
+					<Dialog open={this.state.showSupport} onClose={() => this.setState({showSupport: false})}>
+						<DialogContent style={{padding: "2rem"}}>
+							<Typography variant={"h4"} style={{textAlign: "center"}}>
+								Game over! {players?.[winnerGuid].nickname} is the winner.
+							</Typography>
+
+							<Support/>
+
+							{playerGuid === ownerGuid && (
+								<div style={{
+									marginTop: "7rem",
+									textAlign: "center"
+								}}>
+									<LoadingButton loading={this.state.restartLoading || this.state.restartDelayed} variant={"contained"} color={"primary"} onClick={() => this.restartClick(playerGuid)}>
+										Restart this game?
+									</LoadingButton>
+								</div>
+							)}
+						</DialogContent>
+					</Dialog>
+				)}
 			</>
 		);
 	}

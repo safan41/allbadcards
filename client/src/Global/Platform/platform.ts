@@ -1,8 +1,12 @@
 import {ErrorDataStore} from "../DataStore/ErrorDataStore";
 import ReactGA from "react-ga";
-import {CardId, GameItem, IBlackCardDefinition, ICardPackSummary, IGameSettings} from "./Contract";
+import {CardId, GameItem, GamesList, IBlackCardDefinition, ICardPackSummary, IGameSettings} from "./Contract";
 
-export interface GamePayload extends GameItem
+export interface GamePayload extends GameItem, WithBuildVersion
+{
+}
+
+export interface WithBuildVersion
 {
 	buildVersion: number;
 }
@@ -25,21 +29,28 @@ class _Platform
 		});
 	}
 
-	private static async doGet<TData>(url: string)
+	private static doGet<TData>(url: string)
 	{
-		return await fetch(url)
-			.then(async r =>
-			{
-				if (r.ok)
+		return new Promise<TData>((resolve, reject) =>
+		{
+			fetch(url)
+				.then(r =>
 				{
-					return r.json();
-				}
-				else
-				{
-					throw await r.json();
-				}
-			})
-			.catch(ErrorDataStore.add) as Promise<TData>;
+					const jsonResponse = r.json() as Promise<TData>;
+
+					if (r.ok)
+					{
+						jsonResponse
+							.then((data: TData) => resolve(data))
+							.catch(reject);
+					}
+					else
+					{
+						jsonResponse.then(reject);
+					}
+				})
+				.catch(ErrorDataStore.add);
+		});
 	}
 
 	private static async doPost<TData>(url: string, data: any)
@@ -234,7 +245,7 @@ class _Platform
 				_Platform.doGet<{ card: IWhiteCard }>(`/api/game/get-white-card?packId=${packId}&cardIndex=${cardIndex}`)
 					.then(data =>
 					{
-						if(!data)
+						if (!data)
 						{
 							reject("Card not found");
 						}
@@ -266,9 +277,14 @@ class _Platform
 		return _Platform.doGet<ICardPackSummary[]>("/api/game/get-packnames?type=" + type);
 	}
 
+	public async getGames(zeroBasedPage = 0)
+	{
+		return _Platform.doGet<GamesList>(`/api/games/public?zeroBasedPage=${zeroBasedPage}`);
+	}
+
 	public registerUser()
 	{
-		return _Platform.doGet<{guid: string}>(`/api/user/register`);
+		return _Platform.doGet<{ guid: string }>(`/api/user/register`);
 	}
 }
 

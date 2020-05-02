@@ -49,14 +49,15 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 		blackCardDef: null,
 		ownerSettings: {
 			skipReveal: false,
-			hideDuringReveal: true,
+			hideDuringReveal: false,
 			includedCardcastPacks: [],
 			includedPacks: [],
 			inviteLink: null,
 			password: null,
 			playerLimit: 50,
 			public: false,
-			roundsToWin: 7
+			roundsToWin: 7,
+			winnerBecomesCzar: false
 		},
 	};
 
@@ -182,6 +183,8 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 
 		if (this.state.ownerSettings
 			&& this.state.game
+			&& this.state.loaded
+			&& prev.loaded
 			&& !deepEqual(prev.ownerSettings, this.state.ownerSettings)
 			&& this.state.game.ownerGuid === UserDataStore.state.playerGuid)
 		{
@@ -451,6 +454,20 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 	{
 		this.setSetting({
 			hideDuringReveal
+		});
+	}
+
+	public setWinnerBecomesCzar(winnerBecomesCzar: boolean)
+	{
+		this.setSetting({
+			winnerBecomesCzar
+		});
+	}
+
+	public setGamePublic(isPublic: boolean)
+	{
+		this.setSetting({
+			public: isPublic
 		});
 	}
 
