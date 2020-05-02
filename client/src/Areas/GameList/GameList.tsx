@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => createStyles({
 		background: "black"
 	},
 	avatarText: {
-		color: theme.palette.primary.main,
+		color: theme.palette.primary.contrastText,
 		fontSize: "0.75rem"
 	},
 	cardListItem: {

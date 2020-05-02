@@ -205,7 +205,7 @@ class _GameDataStore extends DataStore<IGameDataStorePayload>
 			this.loadPlayerCards(meGuid);
 		}
 
-		if (prev.game?.blackCard !== this.state.game?.blackCard)
+		if (!deepEqual(prev.game?.blackCard, this.state.game?.blackCard))
 		{
 			this.loadBlackCard();
 		}

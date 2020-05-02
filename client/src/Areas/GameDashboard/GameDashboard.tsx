@@ -116,18 +116,20 @@ class GameDashboard extends React.Component<Props, State>
 				)}
 				<ButtonGroup style={{width: "100%", justifyContent: "center", marginTop: "2rem"}}>
 					<ButtonGroup orientation={mobile ? "vertical" : "horizontal"}>
-						<Button
-							variant="outlined"
-							color="default"
-							size="large"
-							style={{
-								fontSize: "1.5rem"
-							}}
-							component={p => <Link to={"/games"} {...p} />}
-							startIcon={<MdArrowUpward/>}
-						>
-							Join Game
-						</Button>
+						{!GameDataStore.state.familyMode && (
+							<Button
+								variant="outlined"
+								color="default"
+								size="large"
+								style={{
+									fontSize: "1.5rem"
+								}}
+								component={p => <Link to={"/games"} {...p} />}
+								startIcon={<MdArrowUpward/>}
+							>
+								Join Game
+							</Button>
+						)}
 						<LoadingButton
 							loading={this.state.createLoading}
 							variant="contained"
