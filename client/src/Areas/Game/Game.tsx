@@ -96,15 +96,6 @@ class Game extends React.Component<RouteComponentProps<IGameParams>, IGameState>
 		}
 	}
 
-	private getGameWinnerFromState = (state: IGameState) =>
-	{
-		const settings = state.gameData.game?.settings;
-		const players = state.gameData.game?.players ?? {};
-		const playerGuids = Object.keys(players);
-		const winnerGuid = playerGuids.find(pg => (players?.[pg].wins ?? 0) >= (settings?.roundsToWin ?? 99));
-		return winnerGuid;
-	};
-
 	private restartClick = (playerGuid: string) =>
 	{
 		this.setState({

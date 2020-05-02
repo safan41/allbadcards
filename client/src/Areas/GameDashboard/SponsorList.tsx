@@ -133,7 +133,7 @@ export const SponsorList = (props: {familyMode: boolean}) =>
 				)}
 
 				<div style={{width: "100%"}}>
-					<a href={"https://www.senahugheslauer.com/?source=abc"} style={{textDecoration: "none"}} target={"_blank"} onClick={() => Platform.trackEvent("sponsor-click", "sena")}>
+					<a href={"https://www.senahugheslauer.com/?source=abc"} style={{textDecoration: "none", display: "inline-block"}} target={"_blank"} onClick={() => Platform.trackEvent("sponsor-click", "sena")}>
 						<Card style={{maxWidth: "30rem", margin: "4rem auto 0"}} elevation={7}>
 							<CardMedia style={{paddingTop: "22.66667%"}} image={"/sponsors/shl.png"}/>
 							<CardContent>

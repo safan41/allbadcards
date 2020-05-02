@@ -94,7 +94,7 @@ class GameDashboard extends React.Component<Props, State>
 
 	public render()
 	{
-		const mobile = matchMedia('(max-width:600px)');
+		const mobile = matchMedia('(max-width:600px)').matches;
 
 		return (
 			<Container style={{textAlign: "center"}}>

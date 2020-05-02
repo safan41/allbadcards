@@ -35,10 +35,17 @@ const GamePreview: React.FC<IGamePreviewProps> = (props) =>
 	}
 
 	const playerCount = Object.keys(gameData.game?.players ?? {}).length;
+	const privacyLabel = gameData.ownerSettings?.public
+		? <>PUBLIC</>
+		: <>This game is <strong>private</strong>. You can make it public in Settings &raquo; General</>;
 
 	return (
 		<div style={{paddingTop: "2rem"}}>
 			<Typography variant={"h4"}>Game</Typography>
+			<Typography style={{}} variant={"caption"}>
+				<em>{privacyLabel}</em>
+			</Typography>
+			<br/>
 			<br/>
 			<CopyGameLink />
 			<Divider style={{margin: "3rem 0"}} />
